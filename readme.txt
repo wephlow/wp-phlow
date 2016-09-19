@@ -1,0 +1,7 @@
+== Changelog ==
+
+= 1.0.4 =
+* hashtags are removed from URL when calling phlow to make it URI-compliant
+ 
+= 1.0.3 =
+* Initial version in public-beta
