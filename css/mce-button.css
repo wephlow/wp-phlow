@@ -2,3 +2,65 @@ i.mce-i-bs3_panel:before {
     font-family: "dashicons";
     content: "\f116";
 }
+
+.icon-logo-small {
+    display: inline-block;
+    background-image: url(https://app.phlow.com/img/icons.png);
+    background-position: -330px -79px;
+    width: 24px;
+    height: 24px;
+    overflow: hidden;
+    text-indent: -999px;
+	vertical-align: middle;
+}
+a.plugin-url{
+box-shadow: none !important
+}
+div.powered-by{text-align:center;}
+
+/*14-07-2017*/
+.image-list{
+	 max-width: 180px;
+    margin: 0 auto;
+}
+.image-list ul li {
+    display: inline-block;
+    width: 33.333%;
+	float: left;
+}
+.image-list ul li div {
+    height: 60px;
+}
+.image-list ul li div img,
+.image-list-horizontal ul li div img{
+	height:100%;
+	width:100%;
+}
+.image-list-horizontal ul{
+	overflow:hidden;
+	text-align:center;
+	    margin-bottom: 0;
+}
+.image-list-horizontal{
+	overflow: hidden;
+}
+.image-list-horizontal ul li {
+	display:inline-block;
+}
+.image-list-horizontal ul li div{
+	width:150px;
+	height:150px;
+}
+.powered-by {
+    clear: both;
+    margin-top: 15px;
+}
+
+@media screen and ( max-width: 1000px ){
+	.image-list-horizontal ul {
+		overflow: auto;
+		text-align: center;
+		margin-bottom: 0;
+		white-space: nowrap;
+	}
+}

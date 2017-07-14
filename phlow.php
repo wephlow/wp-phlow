@@ -27,6 +27,7 @@ class ISAAC_Phlow
 	{
 		add_action('init', array($this, 'phlow_localize'));
 		add_action( 'admin_enqueue_scripts', array($this,'enqueue') );
+                add_action( 'wp_enqueue_scripts', array($this,'enqueue') );
 		add_action( 'widgets_init', 'phlow_register_widget' );
 		if( is_admin() )
 		{
@@ -52,14 +53,40 @@ class ISAAC_Phlow
     }
 
     public function addShortcodes()
-	{
-		if(get_option('phlow_token') != null || get_option('phlow_token') != '' )
-    	{
-    		add_shortcode('phlow_stream', array($this, 'shortcode_phlow_page'));
-    	}
-	}
+    {
+        if(get_option('phlow_token') != null || get_option('phlow_token') != '' ){
+            add_shortcode('phlow_stream', array($this, 'shortcode_phlow_page'));      
+        }
+        add_shortcode('image_display_vertical', array($this, 'shortcode_image_display_vertical_page'));
+    }
+    
+    public function shortcode_image_display_vertical_page($att){
+        $images=array(
+            0 => $this->_plugin_url.'/images/1.jpg',
+            1 => $this->_plugin_url.'/images/2.jpg',
+            2 => $this->_plugin_url.'/images/3.jpg',
+            3 => $this->_plugin_url.'/images/4.jpg',
+            4 => $this->_plugin_url.'/images/5.jpg',
+            5 => $this->_plugin_url.'/images/6.jpg',
+            6 => $this->_plugin_url.'/images/7.jpg',
+            7 => $this->_plugin_url.'/images/8.jpg',
+            8 => $this->_plugin_url.'/images/9.jpg',
+        );
+        echo '<div class="image-list">';
+        echo '<ul>';
+        for($i=0; $i<count($images); $i++) {
+            echo '<li><div><img class="images-view" src="'.$images[$i].'" style="display:inline-block"></div></li>';
+        }
+        echo '</ul>';
+        echo '</div>';
+        echo '<div class="powered-by">'
+            . '<span>Powered by</span>'
+            . '<span> </span>'
+            . '<a class="plugin-url" target="_blank" href="https://app.phlow.com"><span class="phlow-red">phlow</span><span> </span><i class="icon-logo-small"></i></a></div>';
+    }
+    
 
-	public function shortcode_phlow_page($atts)
+        public function shortcode_phlow_page($atts)
 	{
 		$a = shortcode_atts( array(
 			'width' => '320',
@@ -77,7 +104,6 @@ class ISAAC_Phlow
 		$tags = str_replace(' ', '', $tags);
 		$tags = str_replace('#', '', $tags);
 		$violence = $a['violence'];
-
 		ob_start();
 		?>
 		<iframe src="http://app.phlow.com/stream/<?php print $tags ; ?>?cleanstream=<?php print $clean ; ?>&nudity=<?php print $nudity ; ?>&violence=<?php print $violence ; ?>"width="<?php print $width ; ?>"height="<?php print $height ; ?>"frameborder="0"></iframe>
