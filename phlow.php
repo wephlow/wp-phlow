@@ -58,9 +58,13 @@ class ISAAC_Phlow
             add_shortcode('phlow_stream', array($this, 'shortcode_phlow_page'));      
         }
         add_shortcode('image_display_vertical', array($this, 'shortcode_image_display_vertical_page'));
+        add_shortcode('image_display_horizontal', array($this, 'shortcode_image_display_horizontal_page'));
     }
     
-    public function shortcode_image_display_vertical_page($att){
+    /*
+     * shortcode is use for display images in Groups 
+     */
+    public function shortcode_image_display_vertical_page($aa){
         $images=array(
             0 => $this->_plugin_url.'/images/1.jpg',
             1 => $this->_plugin_url.'/images/2.jpg',
@@ -80,11 +84,38 @@ class ISAAC_Phlow
         echo '</ul>';
         echo '</div>';
         echo '<div class="powered-by">'
-            . '<span>Powered by</span>'
+            . '<span class="first-child">Powered by</span>'
             . '<span> </span>'
             . '<a class="plugin-url" target="_blank" href="https://app.phlow.com"><span class="phlow-red">phlow</span><span> </span><i class="icon-logo-small"></i></a></div>';
     }
     
+    /*
+     * shortcode is use for display images in single line 
+     */
+    public function shortcode_image_display_horizontal_page($aa){
+	$images=array(
+            0 => $this->_plugin_url.'/images/1.jpg',
+            1 => $this->_plugin_url.'/images/2.jpg',
+            2 => $this->_plugin_url.'/images/3.jpg',
+            3 => $this->_plugin_url.'/images/4.jpg',
+            4 => $this->_plugin_url.'/images/12.jpg',
+            5 => $this->_plugin_url.'/images/6.jpg',
+            6 => $this->_plugin_url.'/images/7.jpg',
+            7 => $this->_plugin_url.'/images/8.jpg',
+            8 => $this->_plugin_url.'/images/9.jpg',
+	);
+	echo '<div class="image-list-horizontal">';
+	echo '<ul>';
+	for($i=0; $i<count($images); $i++) {
+		echo '<li><div><img class="images-view-horizontal" src="'.$images[$i].'"></div></li>';
+	}
+	echo '</ul>';
+	echo "</div>";
+	echo '<div class="powered-by">'
+		. '<span class="first-child">Powered by</span>'
+		. '<span> </span>'
+		. '<a class="plugin-url" target="_blank" href="https://app.phlow.com"><span class="phlow-red">phlow</span><span> </span><i class="icon-logo-small"></i></a></div>';
+}
 
         public function shortcode_phlow_page($atts)
 	{
