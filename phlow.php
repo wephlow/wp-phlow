@@ -57,14 +57,14 @@ class ISAAC_Phlow
         if(get_option('phlow_token') != null || get_option('phlow_token') != '' ){
             add_shortcode('phlow_stream', array($this, 'shortcode_phlow_page'));      
         }
-        add_shortcode('image_display_vertical', array($this, 'shortcode_image_display_vertical_page'));
-        add_shortcode('image_display_horizontal', array($this, 'shortcode_image_display_horizontal_page'));
+        add_shortcode('groups_images', array($this, 'shortcode_groups_image'));
+        add_shortcode('line_images', array($this, 'shortcode_line_images'));
     }
     
     /*
      * shortcode is use for display images in Groups 
      */
-    public function shortcode_image_display_vertical_page($aa){
+    public function shortcode_groups_image($aa){
         $images=array(
             0 => $this->_plugin_url.'/images/1.jpg',
             1 => $this->_plugin_url.'/images/2.jpg',
@@ -76,10 +76,11 @@ class ISAAC_Phlow
             7 => $this->_plugin_url.'/images/8.jpg',
             8 => $this->_plugin_url.'/images/9.jpg',
         );
+        ob_start();
         echo '<div class="image-list">';
         echo '<ul>';
         for($i=0; $i<count($images); $i++) {
-            echo '<li><div><img class="images-view" src="'.$images[$i].'" style="display:inline-block"></div></li>';
+            echo '<li><div><a href="'.$images[$i].'"><img class="images-view" src="'.$images[$i].'" style="display:inline-block"></a></div></li>';
         }
         echo '</ul>';
         echo '</div>';
@@ -87,12 +88,14 @@ class ISAAC_Phlow
             . '<span class="first-child">Powered by</span>'
             . '<span> </span>'
             . '<a class="plugin-url" target="_blank" href="https://app.phlow.com"><span class="phlow-red">phlow</span><span> </span><i class="icon-logo-small"></i></a></div>';
-    }
+    
+        return ob_get_clean();
+        }
     
     /*
      * shortcode is use for display images in single line 
      */
-    public function shortcode_image_display_horizontal_page($aa){
+    public function shortcode_line_images($aa){
 	$images=array(
             0 => $this->_plugin_url.'/images/1.jpg',
             1 => $this->_plugin_url.'/images/2.jpg',
@@ -104,10 +107,11 @@ class ISAAC_Phlow
             7 => $this->_plugin_url.'/images/8.jpg',
             8 => $this->_plugin_url.'/images/9.jpg',
 	);
+        ob_start();
 	echo '<div class="image-list-horizontal">';
 	echo '<ul>';
 	for($i=0; $i<count($images); $i++) {
-		echo '<li><div><img class="images-view-horizontal" src="'.$images[$i].'"></div></li>';
+		echo '<li><div><a href="'.$images[$i].'"><img class="images-view-horizontal" src="'.$images[$i].'"></a></div></li>';
 	}
 	echo '</ul>';
 	echo "</div>";
@@ -115,7 +119,9 @@ class ISAAC_Phlow
 		. '<span class="first-child">Powered by</span>'
 		. '<span> </span>'
 		. '<a class="plugin-url" target="_blank" href="https://app.phlow.com"><span class="phlow-red">phlow</span><span> </span><i class="icon-logo-small"></i></a></div>';
-}
+        return ob_get_clean();
+        
+        }
 
         public function shortcode_phlow_page($atts)
 	{

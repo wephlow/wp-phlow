@@ -40,7 +40,7 @@ span.phlow-red{color:#e94033; }
 }
 .image-list-horizontal ul{
     overflow:hidden;
-    text-align:center;
+    /*text-align:center;*/
     margin-bottom: 0;
 }
 .image-list-horizontal{
@@ -58,11 +58,3 @@ span.phlow-red{color:#e94033; }
     padding-top: 10px;
 }
 
-@media screen and ( max-width: 1000px ){
-	.image-list-horizontal ul {
-		overflow: auto;
-		text-align: center;
-		margin-bottom: 0;
-		white-space: nowrap;
-	}
-}
