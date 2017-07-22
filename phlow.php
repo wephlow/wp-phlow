@@ -65,6 +65,7 @@ class ISAAC_Phlow
      * shortcode is use for display images in Groups 
      */
     public function shortcode_groups_image($aa){
+        $att=shortcode_atts(array(),$aa);
         $images=array(
             0 => $this->_plugin_url.'/images/1.jpg',
             1 => $this->_plugin_url.'/images/2.jpg',
@@ -78,17 +79,16 @@ class ISAAC_Phlow
         );
         ob_start();
         echo '<div class="image-list">';
-        echo '<ul>';
-        for($i=0; $i<count($images); $i++) {
-            echo '<li><div><a href="'.$images[$i].'"><img class="images-view" src="'.$images[$i].'" style="display:inline-block"></a></div></li>';
+        echo '<ul class="flickr">';
+        foreach ($images as $img){
+            echo '<li><a target="_blank" href="'.$img.'"><img class="images-view" src="'.$this->_plugin_url.'/timthumb.php?w=150&h=150&src='.$img.'" height="150" width="150" /></a></li>';   
         }
-        echo '</ul>';
-        echo '</div>';
         echo '<div class="powered-by">'
             . '<span class="first-child">Powered by</span>'
             . '<span> </span>'
             . '<a class="plugin-url" target="_blank" href="https://app.phlow.com"><span class="phlow-red">phlow</span><span> </span><i class="icon-logo-small"></i></a></div>';
-    
+        echo '</ul>';
+        echo '</div>';     
         return ob_get_clean();
         }
     
@@ -96,29 +96,31 @@ class ISAAC_Phlow
      * shortcode is use for display images in single line 
      */
     public function shortcode_line_images($aa){
+        $att=shortcode_atts(array(),$aa);
 	$images=array(
             0 => $this->_plugin_url.'/images/1.jpg',
             1 => $this->_plugin_url.'/images/2.jpg',
             2 => $this->_plugin_url.'/images/3.jpg',
             3 => $this->_plugin_url.'/images/4.jpg',
-            4 => $this->_plugin_url.'/images/12.jpg',
+            4 => $this->_plugin_url.'/images/5.jpg',
             5 => $this->_plugin_url.'/images/6.jpg',
             6 => $this->_plugin_url.'/images/7.jpg',
             7 => $this->_plugin_url.'/images/8.jpg',
             8 => $this->_plugin_url.'/images/9.jpg',
+            9 => $this->_plugin_url.'/images/10.jpg',
 	);
         ob_start();
 	echo '<div class="image-list-horizontal">';
-	echo '<ul>';
-	for($i=0; $i<count($images); $i++) {
-		echo '<li><div><a href="'.$images[$i].'"><img class="images-view-horizontal" src="'.$images[$i].'"></a></div></li>';
+	echo '<ul class="line-images">';
+        foreach ($images as $img){
+		echo '<li><a href="'.$img.'"><img class="images-view" src="'.$this->_plugin_url.'/timthumb.php?w=150&h=150&src='.$img.'" height="150" width="150" /></a></li>';
 	}
-	echo '</ul>';
-	echo "</div>";
-	echo '<div class="powered-by">'
+        echo '<div class="powered-by">'
 		. '<span class="first-child">Powered by</span>'
 		. '<span> </span>'
 		. '<a class="plugin-url" target="_blank" href="https://app.phlow.com"><span class="phlow-red">phlow</span><span> </span><i class="icon-logo-small"></i></a></div>';
+	echo '</ul>';
+	echo "</div>";
         return ob_get_clean();
         
         }
