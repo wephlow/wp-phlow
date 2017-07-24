@@ -254,44 +254,106 @@ class phlow {
 		echo '</div>';
 	}
 
+	/**
+	 * phlow settings page
+	 */
 	public function phlow_screen() {
 		$url = admin_url('options-general.php?page=phlow-settings.php');
 		$nudity = get_option('nudity');
 		$violence = get_option('violence');
-		?>
-		<form method="post" action="<?php echo $url; ?>">
-		<?php
-		echo '<h2>user settings</h2>';
-		?>
-		<p>
-			<input type="submit" name="log_out" value="log out from phlow"  />
-			<div><strong>You are logged in to phlow</strong></div>
-		</p>
-		<?php
-		echo '<h2>default settings</h2>';
-		?>
-		<script type='text/javascript'>
-        $(document).ready(function() {
-            Tipped.create('.box');
-         });
-        </script>
 
-			<p>
-				<input type="checkbox" name="nudity" <?php print $nudity == '1' ? 'checked' : ''; ?> />
-				<label>allow nudity <a class="box" data-tipped-options="position: 'top'" href="#" title="Activate this option to allow phlow to show images marked as containing nudity">  ?</a></label>
-			</p>
-			<p>
-				<input type="checkbox" name="violence"  <?php print $violence == '1' ? 'checked' : ''; ?>  />
-				<label>allow violence<a class="box" data-tipped-options="position: 'top'" href="#" title="Activate this option to allow phlow to show images marked as containing violence">  ?</a></label>
-			</p>
-			<p>
-				<input type="checkbox" name="streams" disabled  />
-				<label>require clean streams<a class="box" data-tipped-options="position: 'top'" href="#" title="Activate this option to force phlow to manually validate every image to avoid images containing nudity and or violence before allowing it on your website. This option is currently unavailable">  ?</a></label>
-			</p>
-			<p>
-				<input type="submit" name="submit_main" value="save"  />
-			</p>
-			<?php
+		$checked_nudity = ($nudity == '1') ? 'checked' : '';
+		$checked_violence = ($violence == '1') ? 'checked' : '';
+
+		$html = '
+			<h1>' . __('phlow settings') . '</h1>
+			<form method="post" action="' . $url . '">
+				<p>
+					<input
+						class="button"
+						type="submit"
+						name="log_out"
+						value="' . __('log out from phlow') . '"
+					/>
+					<div>
+						<strong>' . __('You are logged in to phlow') . '</strong>
+					</div>
+				</p>
+				<hr />
+				<h2 class="title">' . __('Default settings') . '</h2>
+				<p>
+					<select name="embed">
+						<option value="0">' . __('Embed a stream') . '</option>
+						<option value="1">' . __('Embed one of your magazines') . '</option>
+						<option value="2">' . __('Embed a public magazine') . '</option>
+						<option value="3">' . __('Embed a moment') . '</option>
+					</select>
+				</p>
+				<p>
+					<p class="post-attributes-label-wrapper">
+						<label>' . __('Widget width') . '</label>
+					</p>
+					<input type="text" name="width" />
+				</p>
+				<p>
+					<p class="post-attributes-label-wrapper">
+						<label>' . __('Widget height') . '</label>
+					</p>
+					<input type="text" name="height" />
+				</p>
+				<p>
+					<label>
+						<input type="checkbox" name="streams" disabled />
+						' . __('Require clean streams') . '
+						<a
+							class="box"
+							data-tipped-options="position: top"
+							title="' . __('Activate this option to force phlow to manually validate every image to avoid images containing nudity and or violence before allowing it on your website. This option is currently unavailable') . '"
+							href="#"
+						>  ?</a>
+					</label>
+				</p>
+				<p>
+					<label>
+						<input type="checkbox" name="nudity" ' . $checked_nudity . ' />
+						' . __('Allow images containing nudity') . '
+						<a
+							class="box"
+							data-tipped-options="position: top"
+							title="' . __('Activate this option to allow phlow to show images marked as containing nudity') .'"
+							href="#"
+						>  ?</a>
+					</label>
+				</p>
+				<p>
+					<label>
+						<input type="checkbox" name="violence" ' . $checked_violence . ' />
+						' . __('Allow violent images') . '
+						<a
+							class="box"
+							data-tipped-options="position: top"
+							title="' . __('Activate this option to allow phlow to show images marked as containing violence') . '"
+							href="#"
+						>  ?</a>
+					</label>
+				</p>
+				<p>
+					<input
+						class="button button-primary"
+						type="submit"
+						name="submit_main"
+						value="' . __('Save changes') . '"
+					/>
+				</p>
+			</form>
+			<script type="text/javascript">
+				$(document).ready(function() {
+					Tipped.create(".box");
+				});
+			</script>
+		';
+
+		echo $html;
 	}
 
 	public function admin_head() {
