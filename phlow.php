@@ -2,7 +2,7 @@
 /**
  * Plugin Name: phlow
  * Description: phlow allows you to embed a carousel of photographs relevant to a specific theme or context. Be it #wedding#gowns, #portraits#blackandwhite or #yoga, phlow provides you with images that are fresh and relevant. To get started, log through a phlow account (it is 100% free) and either embed the stream in your WYSIWYG editor or add a widget to your blog.
- * Version: 1.0.5
+ * Version: 1.0.6
  * Author: phlow
  * Author URI: http://phlow.com
  */
@@ -10,7 +10,6 @@
 class phlow_widget {
 	protected $_plugin_id = 'phlow';
 	protected $_plugin_dir;
-	public $shortcode_tag = 'phlow_stream';
 	
 	public function __construct() {
 		$this->addActions();
@@ -22,7 +21,7 @@ class phlow_widget {
 	protected function addActions() {
 	    add_action('init', array($this, 'phlow_localize'));
 		add_action( 'admin_enqueue_scripts', array($this,'enqueue') );
-		//add_action( 'widgets_init', 'phlow_register_widget' );
+		add_action( 'widgets_init', 'phlow_register_widget' );
 		add_action( 'wp_enqueue_scripts', array($this,'enqueue') );
 
 		if( is_admin() ) {
@@ -54,28 +53,41 @@ class phlow_widget {
         wp_register_script( 'ph_script', $this->_plugin_url .'/js/tipped/tipped.js',array('jquery'), null, false);
         wp_enqueue_script( 'ph_script');
     }
+
+    /**
+     * @param $source
+     * @param $id
+     * @return array
+     *
+     * Returns an array of "imageLink" and "URL"
+     */
+    private function phlowLoadImages($atts){
+        /** make sure that the request for the images contains ?size=150x150c */
+
+        $sources = shortcode_atts( array(
+			'source' => 'stream',
+			'id'  => '',
+			'clean' => '0',
+			'nudity'  => get_option('nudity'),
+			'violence'  => get_option('violence'),
+			), $atts );
+
+        //$sources['source'], $sources['id'], $sources['clean'], $sources['nudity'], $sources['violence']
+    }
     
     /*
      * shortcode is use for display images in Groups 
      */
     public function shortcode_groups_image($atts){
-        $att=shortcode_atts(array(),$atts);
-        $images=array(
-            0 => $this->_plugin_url.'/images/1.jpg',
-            1 => $this->_plugin_url.'/images/2.jpg',
-            2 => $this->_plugin_url.'/images/3.jpg',
-            3 => $this->_plugin_url.'/images/4.jpg',
-            4 => $this->_plugin_url.'/images/5.jpg',
-            5 => $this->_plugin_url.'/images/6.jpg',
-            6 => $this->_plugin_url.'/images/7.jpg',
-            7 => $this->_plugin_url.'/images/8.jpg',
-            8 => $this->_plugin_url.'/images/9.jpg',
-        );
+
+        $imageList = $this->phlowLoadImages($atts);
+
+
         ob_start();
         echo '<div class="image-list">';
         echo '<ul class="groups-images">';
-        foreach ($images as $img){
-            echo '<li><a target="_blank" href="'.$img.'"><img class="images-view" src="'.$img.'" /></a></li>';   
+        foreach ($imageList as $image){
+            echo '<li><a target="_blank" href="'.$image['URL'].'"><img class="images-view" src="'.$image['imageLink'].'" /></a></li>';
         }
         echo '<div class="powered-by">'
             . '<span class="first-child">Powered by</span>'
@@ -90,37 +102,25 @@ class phlow_widget {
      * shortcode is use for display images in single line 
      */
     public function shortcode_line_images($atts){
-        $att=shortcode_atts(array(),$atts);
-	$images=array(
-            0 => $this->_plugin_url.'/images/1.jpg',
-            1 => $this->_plugin_url.'/images/2.jpg',
-            2 => $this->_plugin_url.'/images/3.jpg',
-            3 => $this->_plugin_url.'/images/4.jpg',
-            4 => $this->_plugin_url.'/images/5.jpg',
-            5 => $this->_plugin_url.'/images/6.jpg',
-            6 => $this->_plugin_url.'/images/7.jpg',
-            7 => $this->_plugin_url.'/images/8.jpg',
-            8 => $this->_plugin_url.'/images/9.jpg',
-            9 => $this->_plugin_url.'/images/10.jpg',
-	);
+
+        $imageList = $this->phlowLoadImages($atts);
         ob_start();
-	echo '<div class="image-list-horizontal">';
-	echo '<ul class="line-images">';
-        foreach ($images as $img){
-		echo '<li><a href="'.$img.'"><img class="images-view" src="'.$img.'"/></a></li>';
-	}
+	    echo '<div class="image-list-horizontal">';
+	    echo '<ul class="line-images">';
+        foreach ($imageList as $image){
+		    echo '<li><a href="'.$image['URL'].'"><img class="images-view" src="'.$image['imageLink'].'"/></a></li>';
+	    }
         echo '<div class="powered-by">'
 		. '<span class="first-child">Powered by</span>'
 		. '<span> </span>'
 		. '<a class="plugin-url" target="_blank" href="https://app.phlow.com"><span class="phlow-red">phlow</span><span> </span><i class="icon-logo-small"></i></a></div>';
-	echo '</ul>';
-	echo "</div>";
+	    echo '</ul>';
+	    echo "</div>";
         return ob_get_clean();
         
         }
 
-        public function shortcode_phlow_page($atts)
-	{
+        public function shortcode_phlow_page($atts) {
 		$a = shortcode_atts( array(
 			'width' => '320',
 			'height'  => '640',
@@ -236,8 +236,6 @@ class phlow_widget {
 			<?php
 	}
 
-	/*
-	 * TEMPORARY DISABLED
 	public function admin_head() {
         if(get_option('phlow_clientPublicKey') == null || get_option('phlow_clientPublicKey') == '' ) {
             return;
@@ -266,7 +264,6 @@ class phlow_widget {
             add_filter( 'mce_buttons', array($this, 'mce_buttons' ) );
         }
     }
-	*/
 
 	/**
      * mce_external_plugins
@@ -274,27 +271,20 @@ class phlow_widget {
      * @param  array $plugin_array
      * @return array
      */
-	/*
-	 * TEMPORARY DISABLED
-    public function mce_external_plugins( $plugin_array ) {
-    	$plugin_array[$this->shortcode_tag] = plugins_url( 'js/mce-button.js' , __FILE__ );
+	public function mce_external_plugins( $plugin_array ) {
+    	$plugin_array['phlow_stream'] = plugins_url( 'js/mce-button.js' , __FILE__ );
     }
-	*/
- 
+
     /**
      * mce_buttons
      * Adds our tinymce button
      * @param  array $buttons
      * @return array
      */
-    /*
-	 * TEMPORARY DISABLED
     public function mce_buttons( $buttons ) {
-    	array_push( $buttons, $this->shortcode_tag );
+    	array_push( $buttons, 'phlow_stream' );
     	return $buttons;
     }
-    */
-	
 }
 $wc_phlow = new phlow_widget();
 
@@ -317,18 +307,12 @@ function phlow_admin_notice__success() {
 }
 add_action( 'admin_notices', 'phlow_admin_notice__success' );
 
-/*
- * TEMPORARY DISABLED
 function phlow_register_widget() {
 	if(get_option('phlow_clientPublicKey') != null || get_option('phlow_clientPublicKey') != '' ) {
 		register_widget( 'phlow_widget_placer' );
 	}
 }
-*/
 
-
-/*
- * TEMPORARY DISABLED
 class phlow_widget_placer extends WP_Widget {
 
     function __construct() {
@@ -405,4 +389,3 @@ class phlow_widget_placer extends WP_Widget {
 		<?php
 	}
 }
-*/
