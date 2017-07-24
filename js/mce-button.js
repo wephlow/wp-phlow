@@ -3,7 +3,7 @@ console.log(my_plugin.url);
     tinymce.PluginManager.add('phlow_stream', function( editor, url ) {
         var sh_tag = 'phlow_stream';
 
-        //helper functions 
+        //helper functions
         function getAttr(s, n) {
             n = new RegExp(n + '=\"([^\"]+)\"', 'g').exec(s);
             return n ?  window.decodeURIComponent(n[1]) : '';
@@ -99,7 +99,7 @@ console.log(my_plugin.url);
                     editor.insertContent( shortcode_str);
                 }
             });
-            });
+        });
 
         //add button
         editor.addButton('phlow_stream', {
@@ -116,13 +116,14 @@ console.log(my_plugin.url);
         });
 
         //replace from shortcode to an image placeholder
-        editor.on('BeforeSetcontent', function(event){ 
+        editor.on('BeforeSetcontent', function(event){
             event.content = replaceShortcodes( event.content );
         });
 
         //replace from image placeholder to shortcode
         editor.on('GetContent', function(event){
-            event.content = restoreShortcodes(event.content);        });
+            event.content = restoreShortcodes(event.content);
+        });
 
         //open popup on placeholder double click
         editor.on('DblClick',function(e) {
@@ -140,5 +141,5 @@ console.log(my_plugin.url);
                 });
             }
         });
-     });
+    });
 })();
