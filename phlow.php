@@ -25,15 +25,16 @@ class ISAAC_Phlow
 
 	protected function addActions()
 	{
-		add_action('init', array($this, 'phlow_localize'));
+	    add_action('init', array($this, 'phlow_localize'));
 		add_action( 'admin_enqueue_scripts', array($this,'enqueue') );
-                add_action( 'wp_enqueue_scripts', array($this,'enqueue') );
 		add_action( 'widgets_init', 'phlow_register_widget' );
 		if( is_admin() )
 		{
 			add_action('admin_head', array( $this, 'admin_head') );
 			add_action('admin_menu', array($this,'phlow_menu'));
 		}
+
+		add_action( 'wp_enqueue_scripts', array($this,'enqueue') );
 	}
 	
 	public function phlow_localize()  
@@ -54,8 +55,8 @@ class ISAAC_Phlow
 
     public function addShortcodes()
     {
-        if(get_option('phlow_token') != null || get_option('phlow_token') != '' ){
-            add_shortcode('phlow_stream', array($this, 'shortcode_phlow_page'));      
+        if(get_option('phlow_clientPublicKey') != null || get_option('phlow_clientPublicKey') != '' ){
+            add_shortcode('phlow_stream', array($this, 'shortcode_phlow_page'));
         }
         add_shortcode('groups_images', array($this, 'shortcode_groups_image'));
         add_shortcode('line_images', array($this, 'shortcode_line_images'));
@@ -152,7 +153,7 @@ class ISAAC_Phlow
 
 	public function phlow_menu()
 	{
-		add_submenu_page( 'options-general.php', 'phlow-settings', 'phlow Settings', 'manage_options','phlow-settings.php', array($this,'phlow_settings') );
+		add_submenu_page( 'options-general.php', 'phlow-settings', 'phlow', 'manage_options','phlow-settings.php', array($this,'phlow_settings') );
 	}
 
 	public function phlow_settings()
@@ -179,23 +180,34 @@ class ISAAC_Phlow
 		$url = admin_url('options-general.php?page=phlow-settings.php');
 		echo '<div class="wrap" style="margin-top:30px">';
 
-		if(isset($_GET['accessToken']))
+		if(isset($_GET['clientPublicKey']) && isset($_GET['clientPrivateKey']) && isset($_GET['sessionPrivateKey']) && isset($_GET['sessionPublicKey']))
 		{
-			$token = $_GET['accessToken'];
-			update_option('phlow_token',$token);
+			$clientPublicKey = $_GET['clientPublicKey'];
+			$clientPrivateKey = $_GET['clientPrivateKey'];
+			$sessionPrivateKey = $_GET['sessionPrivateKey'];
+			$sessionPublicKey = $_GET['sessionPublicKey'];
+
+			update_option('phlow_clientPublicKey',$clientPublicKey);
+			update_option('phlow_clientPrivateKey',$clientPrivateKey);
+			update_option('phlow_sessionPrivateKey',$sessionPrivateKey);
+			update_option('phlow_sessionPublicKey',$sessionPublicKey);
+
 			self::phlow_screen();
 		}
 		elseif(isset($_POST['log_out']))
 		{
 			echo '<h2>user settings</h2>';
 			echo '<div>You have successfully logged out of phlow</div>';
-			echo '<a href="https://cp.phlow.com/auth/token?scope=profile_read&redirectUrl='.$url.'">Log in to phlow</a>';
-		    update_option('phlow_token','');	
+			echo '<a href="http://cp.phlow.com/clients/new?type=wordpress&redirectUrl='.$url.'">Log in to phlow</a>';
+			update_option('phlow_clientPublicKey','');
+			update_option('phlow_clientPrivateKey','');
+			update_option('phlow_sessionPrivateKey','');
+			update_option('phlow_sessionPublicKey','');
 		}
-		elseif(get_option('phlow_token') == null || get_option('phlow_token') == '' )
+		elseif(get_option('phlow_clientPublicKey') == null || get_option('phlow_clientPublicKey') == '' )
 		{
 			echo '<h2>user settings</h2>';
-			echo '<a href="https://cp.phlow.com/auth/token?scope=profile_read&redirectUrl='.$url.'">Log in to phlow</a>';
+			echo '<a href="http://cp.phlow.com/clients/new?type=wordpress&redirectUrl='.$url.'">Log in to phlow</a>';
 		}
 		else
 		{
