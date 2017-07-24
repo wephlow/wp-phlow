@@ -73,9 +73,9 @@ class phlow_widget {
         );
         ob_start();
         echo '<div class="image-list">';
-        echo '<ul class="flickr">';
+        echo '<ul class="groups-images">';
         foreach ($images as $img){
-            echo '<li><a target="_blank" href="'.$img.'"><img class="images-view" src="'.$this->_plugin_url.'/timthumb.php?w=150&h=150&src='.$img.'" height="150" width="150" /></a></li>';   
+            echo '<li><a target="_blank" href="'.$img.'"><img class="images-view" src="'.$img.'" /></a></li>';   
         }
         echo '<div class="powered-by">'
             . '<span class="first-child">Powered by</span>'
@@ -107,7 +107,7 @@ class phlow_widget {
 	echo '<div class="image-list-horizontal">';
 	echo '<ul class="line-images">';
         foreach ($images as $img){
-		echo '<li><a href="'.$img.'"><img class="images-view" src="'.$this->_plugin_url.'/timthumb.php?w=150&h=150&src='.$img.'" height="150" width="150" /></a></li>';
+		echo '<li><a href="'.$img.'"><img class="images-view" src="'.$img.'"/></a></li>';
 	}
         echo '<div class="powered-by">'
 		. '<span class="first-child">Powered by</span>'
