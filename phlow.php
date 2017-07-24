@@ -34,10 +34,9 @@ class phlow_widget {
     {
         if(get_option('phlow_clientPublicKey') != null || get_option('phlow_clientPublicKey') != '' ){
             add_shortcode('phlow_stream', array($this, 'shortcode_phlow_page'));
+            add_shortcode('phlow_group', array($this, 'shortcode_groups_image'));
+            add_shortcode('phlow_line', array($this, 'shortcode_line_images'));
         }
-        /** to be moved inside the previous IF once the dev is completed */
-        add_shortcode('groups_images', array($this, 'shortcode_groups_image'));
-        add_shortcode('line_images', array($this, 'shortcode_line_images'));
     }
 	
 	public function phlow_localize() {
@@ -72,6 +71,67 @@ class phlow_widget {
 			'violence'  => get_option('violence'),
 			), $atts );
 
+
+        $curl = curl_init();
+        curl_setopt_array($curl, array(
+            CURLOPT_RETURNTRANSFER => 1,
+            CURLOPT_URL => 'https://api.phlow.com/v1/time'
+        ));
+
+        $time = json_decode(curl_exec($curl))->time;
+        curl_close($curl);
+
+        /*
+        the HTTP verb being used,
+        the URI being called (request URI utf-8 encoded),
+        the current Unix timestamp in seconds. (See Time stamping).
+        (optional) the MD5 checksum of the body (if it’s present),
+        (optional) session’s private key
+        2. Compute the checksum ¶
+
+        Generate a keyed-hash message authentication code (HMAC-SHA256) from the above string using the clientPrivateKey and encode the obtained keyed-hash message to hexadecimal. This is your checksum.
+
+        3. Authenticate the request ¶
+
+        Concatenate the following in exact order and without any separators:
+
+        clientPublicKey key,
+        sessionPublicKey key (should be omitted on “login” and “register” requests),
+        timestamp,
+        checksum
+        Use this string to authenticate your requests. Pass it in the X-PHLOW HTTP header.
+
+        Optionally you may also pass the authentication string using the xphlow query parameter; /endpoint?xphlow={authenticationString}
+         */
+
+        $uri = "https://api.phlow.com/v1/";
+
+        switch (strtolower($sources['source'])){
+            case "stream":
+                $uri .= "stream/?context=boudoir&size=150x150c";
+                break;
+        }
+
+        $checksumData = "GET\n".utf8_encode($uri)."\n".$time."\n\n".get_option('phlow_sessionPrivateKey');
+        $checksum = hash_hmac("SHA256", $checksumData, get_option('phlow_clientPrivateKey'), false);
+
+        $curl = curl_init();
+        curl_setopt_array($curl, array(
+            CURLOPT_RETURNTRANSFER => 1,
+            CURLOPT_HTTPHEADER => array(
+                    'X-PHLOW:'.get_option('phlow_clientPublicKey').get_option('phlow_sessionPublicKey').$time.$checksum
+                    ),
+            CURLOPT_URL => $uri
+        ));
+
+        $a = curl_exec($curl);
+        $return = json_decode($a);
+        curl_close($curl);
+
+        echo "<hr>";
+        echo $a;
+        echo "<hr>";
+
         //$sources['source'], $sources['id'], $sources['clean'], $sources['nudity'], $sources['violence']
     }
     
@@ -104,18 +164,22 @@ class phlow_widget {
     public function shortcode_line_images($atts){
 
         $imageList = $this->phlowLoadImages($atts);
+
         ob_start();
-	    echo '<div class="image-list-horizontal">';
-	    echo '<ul class="line-images">';
-        foreach ($imageList as $image){
-		    echo '<li><a href="'.$image['URL'].'"><img class="images-view" src="'.$image['imageLink'].'"/></a></li>';
+	    if (isset($imageList) && sizeof($imageList) > 0){
+	        echo '<div class="image-list-horizontal">';
+	        echo '<ul class="line-images">';
+            foreach ($imageList as $image){
+                echo '<li><a href="'.$image['URL'].'"><img class="images-view" src="'.$image['imageLink'].'"/></a></li>';
+            }
+
+            echo '<div class="powered-by">'
+            . '<span class="first-child">Powered by</span>'
+            . '<span> </span>'
+            . '<a class="plugin-url" target="_blank" href="https://app.phlow.com"><span class="phlow-red">phlow</span><span> </span><i class="icon-logo-small"></i></a></div>';
+            echo '</ul>';
+            echo "</div>";
 	    }
-        echo '<div class="powered-by">'
-		. '<span class="first-child">Powered by</span>'
-		. '<span> </span>'
-		. '<a class="plugin-url" target="_blank" href="https://app.phlow.com"><span class="phlow-red">phlow</span><span> </span><i class="icon-logo-small"></i></a></div>';
-	    echo '</ul>';
-	    echo "</div>";
         return ob_get_clean();
         
         }
