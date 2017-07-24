@@ -7,44 +7,46 @@
  * Author URI: http://phlow.com
  */
 
-class ISAAC_Phlow
-{
+class phlow_widget {
 	protected $_plugin_id = 'phlow';
-	protected $_plugin_dir ;
-	public static $activation_transient;
-	public static $plugin_folder = 'phlow';
+	protected $_plugin_dir;
 	public $shortcode_tag = 'phlow_stream';
 	
-	public function __construct()
-	{
+	public function __construct() {
 		$this->addActions();
 		$this->addShortcodes();
 		$this->_plugin_dir = dirname(__FILE__);
 		$this->_plugin_url = get_site_url(null, 'wp-content/plugins/' . basename($this->_plugin_dir));
 	}
 
-	protected function addActions()
-	{
+	protected function addActions() {
 	    add_action('init', array($this, 'phlow_localize'));
 		add_action( 'admin_enqueue_scripts', array($this,'enqueue') );
-		add_action( 'widgets_init', 'phlow_register_widget' );
-		if( is_admin() )
-		{
+		//add_action( 'widgets_init', 'phlow_register_widget' );
+		add_action( 'wp_enqueue_scripts', array($this,'enqueue') );
+
+		if( is_admin() ) {
 			add_action('admin_head', array( $this, 'admin_head') );
 			add_action('admin_menu', array($this,'phlow_menu'));
 		}
-
-		add_action( 'wp_enqueue_scripts', array($this,'enqueue') );
 	}
+
+    public function addShortcodes()
+    {
+        if(get_option('phlow_clientPublicKey') != null || get_option('phlow_clientPublicKey') != '' ){
+            add_shortcode('phlow_stream', array($this, 'shortcode_phlow_page'));
+        }
+        /** to be moved inside the previous IF once the dev is completed */
+        add_shortcode('groups_images', array($this, 'shortcode_groups_image'));
+        add_shortcode('line_images', array($this, 'shortcode_line_images'));
+    }
 	
-	public function phlow_localize()  
-	{
+	public function phlow_localize() {
         // Localization
 		load_plugin_textdomain('phlow', false, dirname(plugin_basename(__FILE__)). "/languages" );
     }
 
-    public function enqueue()
-    {
+    public function enqueue() {
     	wp_register_style( 'ph_css', $this->_plugin_url . '/css/tipped/tipped.css', false, '1.0.0' );
         wp_enqueue_style( 'ph_css' );
         wp_enqueue_style('phlow_shortcode', $this->_plugin_url .'/css/mce-button.css' );
@@ -52,21 +54,12 @@ class ISAAC_Phlow
         wp_register_script( 'ph_script', $this->_plugin_url .'/js/tipped/tipped.js',array('jquery'), null, false);
         wp_enqueue_script( 'ph_script');
     }
-
-    public function addShortcodes()
-    {
-        if(get_option('phlow_clientPublicKey') != null || get_option('phlow_clientPublicKey') != '' ){
-            add_shortcode('phlow_stream', array($this, 'shortcode_phlow_page'));
-        }
-        add_shortcode('groups_images', array($this, 'shortcode_groups_image'));
-        add_shortcode('line_images', array($this, 'shortcode_line_images'));
-    }
     
     /*
      * shortcode is use for display images in Groups 
      */
-    public function shortcode_groups_image($aa){
-        $att=shortcode_atts(array(),$aa);
+    public function shortcode_groups_image($atts){
+        $att=shortcode_atts(array(),$atts);
         $images=array(
             0 => $this->_plugin_url.'/images/1.jpg',
             1 => $this->_plugin_url.'/images/2.jpg',
@@ -96,8 +89,8 @@ class ISAAC_Phlow
     /*
      * shortcode is use for display images in single line 
      */
-    public function shortcode_line_images($aa){
-        $att=shortcode_atts(array(),$aa);
+    public function shortcode_line_images($atts){
+        $att=shortcode_atts(array(),$atts);
 	$images=array(
             0 => $this->_plugin_url.'/images/1.jpg',
             1 => $this->_plugin_url.'/images/2.jpg',
@@ -151,37 +144,30 @@ class ISAAC_Phlow
 		return ob_get_clean();
 	}
 
-	public function phlow_menu()
-	{
+	public function phlow_menu() {
 		add_submenu_page( 'options-general.php', 'phlow-settings', 'phlow', 'manage_options','phlow-settings.php', array($this,'phlow_settings') );
 	}
 
-	public function phlow_settings()
-	{
+	public function phlow_settings() {
 		if(isset($_POST['submit_main']))
 		{
 			echo '<div><strong>settings updated successfully !</strong></div>';
-			if(isset($_POST['nudity']))
-			{
+			if(isset($_POST['nudity'])) {
 				update_option('nudity', '1');
-			}else
-			{
+			} else {
 				update_option('nudity', '0');
 			}
 
-			if(isset($_POST['violence']))
-			{
+			if(isset($_POST['violence'])) {
 				update_option('violence', '1');
-			}else
-			{
+			} else {
 				update_option('violence', '0');
 			}
 		}
 		$url = admin_url('options-general.php?page=phlow-settings.php');
 		echo '<div class="wrap" style="margin-top:30px">';
 
-		if(isset($_GET['clientPublicKey']) && isset($_GET['clientPrivateKey']) && isset($_GET['sessionPrivateKey']) && isset($_GET['sessionPublicKey']))
-		{
+		if(isset($_GET['clientPublicKey']) && isset($_GET['clientPrivateKey']) && isset($_GET['sessionPrivateKey']) && isset($_GET['sessionPublicKey'])) {
 			$clientPublicKey = $_GET['clientPublicKey'];
 			$clientPrivateKey = $_GET['clientPrivateKey'];
 			$sessionPrivateKey = $_GET['sessionPrivateKey'];
@@ -193,9 +179,7 @@ class ISAAC_Phlow
 			update_option('phlow_sessionPublicKey',$sessionPublicKey);
 
 			self::phlow_screen();
-		}
-		elseif(isset($_POST['log_out']))
-		{
+		} elseif(isset($_POST['log_out'])) {
 			echo '<h2>user settings</h2>';
 			echo '<div>You have successfully logged out of phlow</div>';
 			echo '<a href="http://cp.phlow.com/clients/new?type=wordpress&redirectUrl='.$url.'">Log in to phlow</a>';
@@ -203,21 +187,16 @@ class ISAAC_Phlow
 			update_option('phlow_clientPrivateKey','');
 			update_option('phlow_sessionPrivateKey','');
 			update_option('phlow_sessionPublicKey','');
-		}
-		elseif(get_option('phlow_clientPublicKey') == null || get_option('phlow_clientPublicKey') == '' )
-		{
+		} elseif(get_option('phlow_clientPublicKey') == null || get_option('phlow_clientPublicKey') == '' ) {
 			echo '<h2>user settings</h2>';
 			echo '<a href="http://cp.phlow.com/clients/new?type=wordpress&redirectUrl='.$url.'">Log in to phlow</a>';
-		}
-		else
-		{
+		} else {
 			self::phlow_screen();
 		}
 		echo '</div>';	
 	}
 
-	public function phlow_screen ()
-	{
+	public function phlow_screen() {
 		$url = admin_url('options-general.php?page=phlow-settings.php');
 		$nudity = get_option('nudity');
 		$violence = get_option('violence');
@@ -257,25 +236,29 @@ class ISAAC_Phlow
 			<?php
 	}
 
-	public function admin_head() 
-	{
-		$plugin_url = plugins_url( '/', __FILE__ );
-		$nudity = (get_option('nudity') == '1') ? true : false;
-		$violence = (get_option('violence') == '1') ? true : false;
-    ?>
-<!-- TinyMCE Shortcode Plugin -->
-<script type='text/javascript'>
-var my_plugin = {
-    'url': '<?php echo $plugin_url; ?>',
-    'nudity': '<?php echo $nudity; ?>',
-    'violence': '<?php echo $violence; ?>',
-};
-</script>
-<?php
-        // check user permissions
+	/*
+	 * TEMPORARY DISABLED
+	public function admin_head() {
+        if(get_option('phlow_clientPublicKey') == null || get_option('phlow_clientPublicKey') == '' ) {
+            return;
+        }
+
         if ( !current_user_can( 'edit_posts' ) && !current_user_can( 'edit_pages' ) ) {
             return;
         }
+
+		$plugin_url = plugins_url( '/', __FILE__ );
+		$nudity = (get_option('nudity') == '1') ? true : false;
+		$violence = (get_option('violence') == '1') ? true : false;
+
+        echo "<!-- TinyMCE Shortcode Plugin -->";
+        echo "<script type='text/javascript'>";
+        echo "var my_plugin = {";
+        echo "    'url': '<?php echo $plugin_url; ?>',";
+        echo "    'nudity': '<?php echo $nudity; ?>',";
+        echo "    'violence': '<?php echo $violence; ?>',";
+        echo "};";
+        echo "</script>";
  
         // check if WYSIWYG is enabled
         if ( 'true' == get_user_option( 'rich_editing' ) ) {
@@ -283,6 +266,7 @@ var my_plugin = {
             add_filter( 'mce_buttons', array($this, 'mce_buttons' ) );
         }
     }
+	*/
 
 	/**
      * mce_external_plugins
@@ -290,14 +274,12 @@ var my_plugin = {
      * @param  array $plugin_array
      * @return array
      */
-    public function mce_external_plugins( $plugin_array ) 
-    {
-    	if(get_option('phlow_token') != null || get_option('phlow_token') != '' )
-    	{
-    		$plugin_array[$this->shortcode_tag] = plugins_url( 'js/mce-button.js' , __FILE__ );
-    	}
-        return $plugin_array;
+	/*
+	 * TEMPORARY DISABLED
+    public function mce_external_plugins( $plugin_array ) {
+    	$plugin_array[$this->shortcode_tag] = plugins_url( 'js/mce-button.js' , __FILE__ );
     }
+	*/
  
     /**
      * mce_buttons
@@ -305,22 +287,49 @@ var my_plugin = {
      * @param  array $buttons
      * @return array
      */
-    public function mce_buttons( $buttons ) 
-    {
-    	if(get_option('phlow_token') != null || get_option('phlow_token') != '' )
-    	{
-    		array_push( $buttons, $this->shortcode_tag );
-    	}
-        return $buttons;
+    /*
+	 * TEMPORARY DISABLED
+    public function mce_buttons( $buttons ) {
+    	array_push( $buttons, $this->shortcode_tag );
+    	return $buttons;
     }
+    */
 	
 }
-$wc_phlow = new ISAAC_Phlow();
+$wc_phlow = new phlow_widget();
+
+function plugin_add_settings_link( $links ) {
+    $settings_link = '<a href="options-general.php?page=phlow-settings.php">' . __( 'Settings' ) . '</a>';
+    array_push( $links, $settings_link );
+  	return $links;
+}
+$plugin = plugin_basename( __FILE__ );
+add_filter( "plugin_action_links_$plugin", 'plugin_add_settings_link' );
+
+function phlow_admin_notice__success() {
+	if(get_option('phlow_clientPublicKey') == null || get_option('phlow_clientPublicKey') == '' ){
+    ?>
+    <div class="notice notice-success is-dismissible">
+        <p><?php _e( 'phlow is activated ! Visit the plugin settings page to start using the plugin', 'phlow' ); ?></p>
+    </div>
+    <?php
+    }
+}
+add_action( 'admin_notices', 'phlow_admin_notice__success' );
 
 /*
-Begin Widget
+ * TEMPORARY DISABLED
+function phlow_register_widget() {
+	if(get_option('phlow_clientPublicKey') != null || get_option('phlow_clientPublicKey') != '' ) {
+		register_widget( 'phlow_widget_placer' );
+	}
+}
 */
-class Phlow_Widget extends WP_Widget {
+
+
+/*
+ * TEMPORARY DISABLED
+class phlow_widget_placer extends WP_Widget {
 
     function __construct() {
 		// Instantiate the parent object
@@ -328,9 +337,7 @@ class Phlow_Widget extends WP_Widget {
 	}
 
 	public function widget( $args, $instance ) {
-        //$user = wp_get_current_user();
-        
-		extract( $args );
+        extract( $args );
 		$title = apply_filters( 'widget_title', $instance['title'] );
 		$tags = str_replace(',', '-', $instance['tags']);
 		$tags = str_replace(' ', '', $tags);
@@ -358,7 +365,7 @@ class Phlow_Widget extends WP_Widget {
 		return $instance;
 	}
 
-	function form( $instance ) 
+	function form( $instance )
 	{
 		$nude = get_option('nudity');
 		$vio = get_option('violence') ;
@@ -377,50 +384,25 @@ class Phlow_Widget extends WP_Widget {
 		$violent = $instance[ 'violent'];// == 'yes') ? 'on' : 'no' ;
 		?>
 		<p>
-		<label for="<?php echo $this->get_field_id( 'title' ); ?>"><?php _e( 'title:' , 'wcw'); ?></label> 
+		<label for="<?php echo $this->get_field_id( 'title' ); ?>"><?php _e( 'title:' , 'wcw'); ?></label>
 		<input class="widefat" id="<?php echo $this->get_field_id( 'title' ); ?>" name="<?php echo $this->get_field_name( 'title' ); ?>" type="text" value="<?php echo esc_attr( $title ); ?>" />
 		</p>
 		<p>
-		<label for="<?php echo $this->get_field_id('tags') ?>"><?php _e( 'tags:' , 'wcw'); ?></label> 
+		<label for="<?php echo $this->get_field_id('tags') ?>"><?php _e( 'tags:' , 'wcw'); ?></label>
 		<input class="widefat" id="<?php echo $this->get_field_id('tags') ?>" name="<?php echo $this->get_field_name('tags') ?>" type="text" value="<?php echo esc_attr( $tags ); ?>" />
 		</p>
 		<p>
-		<label for="<?php echo $this->get_field_id('nudity') ?>"><?php _e( 'allow images containing nudity' , 'wcw'); ?></label> 
+		<label for="<?php echo $this->get_field_id('nudity') ?>"><?php _e( 'allow images containing nudity' , 'wcw'); ?></label>
 		<input class="widefat" id="<?php echo $this->get_field_id('nudity') ?>"  name="<?php echo $this->get_field_name('nudity') ?>" type="checkbox" <?php checked( $nudity); ?>  />
 		</p>
 		<p>
-		<label for="<?php echo $this->get_field_id('violent') ?>"><?php _e( 'allow violent images' , 'wcw'); ?></label> 
+		<label for="<?php echo $this->get_field_id('violent') ?>"><?php _e( 'allow violent images' , 'wcw'); ?></label>
 		<input class="widefat" id="<?php echo $this->get_field_id('violent') ?>" name="<?php echo $this->get_field_name('violent') ?>" type="checkbox" <?php checked( $violent ); ?> />
 		</p>
-		<label for="<?php echo $this->get_field_id('streams') ?>"><?php _e( 'require clean streams' , 'wcw'); ?></label> 
+		<label for="<?php echo $this->get_field_id('streams') ?>"><?php _e( 'require clean streams' , 'wcw'); ?></label>
 		<input class="widefat" id="<?php echo $this->get_field_id('streams') ?>" name="<?php echo $this->get_field_name('violent') ?>" type="checkbox" value="" disabled />
 		</p>
-		<?php 
+		<?php
 	}
 }
-
-function phlow_register_widget() 
-{
-	if(get_option('phlow_token') != null || get_option('phlow_token') != '' )
-	{
-		register_widget( 'Phlow_Widget' );
-	}
-}
-function plugin_add_settings_link( $links ) {
-    $settings_link = '<a href="options-general.php?page=phlow-settings.php">' . __( 'Settings' ) . '</a>';
-    array_push( $links, $settings_link );
-  	return $links;
-}
-$plugin = plugin_basename( __FILE__ );
-add_filter( "plugin_action_links_$plugin", 'plugin_add_settings_link' );
-
-function phlow_admin_notice__success() {
-	if(get_option('phlow_token') == null || get_option('phlow_token') == '' ){
-    ?>
-    <div class="notice notice-success is-dismissible">
-        <p><?php _e( 'phlow is activated ! Visit the plugin settings page to start using the plugin', 'phlow' ); ?></p>
-    </div>
-    <?php
-    }
-}
-add_action( 'admin_notices', 'phlow_admin_notice__success' );
+*/
