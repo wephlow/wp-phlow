@@ -60,12 +60,12 @@ class phlow_widget {
      *
      * Returns an array of "imageLink" and "URL"
      */
-    private function phlowLoadImages($atts){
+    private function phlowLoadImages($atts, $limit=10){
         /** make sure that the request for the images contains ?size=150x150c */
 
         $sources = shortcode_atts( array(
 			'source' => 'stream',
-			'id'  => '',
+			'context'  => '',
 			'clean' => '0',
 			'nudity'  => get_option('nudity'),
 			'violence'  => get_option('violence'),
@@ -81,38 +81,28 @@ class phlow_widget {
         $time = json_decode(curl_exec($curl))->time;
         curl_close($curl);
 
-        /*
-        the HTTP verb being used,
-        the URI being called (request URI utf-8 encoded),
-        the current Unix timestamp in seconds. (See Time stamping).
-        (optional) the MD5 checksum of the body (if it’s present),
-        (optional) session’s private key
-        2. Compute the checksum ¶
+        $apiUri = 'https://api.phlow.com';
+        $uri = '';
+        $target = '';
 
-        Generate a keyed-hash message authentication code (HMAC-SHA256) from the above string using the clientPrivateKey and encode the obtained keyed-hash message to hexadecimal. This is your checksum.
-
-        3. Authenticate the request ¶
-
-        Concatenate the following in exact order and without any separators:
-
-        clientPublicKey key,
-        sessionPublicKey key (should be omitted on “login” and “register” requests),
-        timestamp,
-        checksum
-        Use this string to authenticate your requests. Pass it in the X-PHLOW HTTP header.
-
-        Optionally you may also pass the authentication string using the xphlow query parameter; /endpoint?xphlow={authenticationString}
-         */
-
-        $uri = "https://api.phlow.com/v1/";
-
+        //$sources['source'], $sources['context'], $sources['clean'], $sources['nudity'], $sources['violence']
         switch (strtolower($sources['source'])){
-            case "stream":
-                $uri .= "stream/?context=boudoir&size=150x150c";
+            case "streams":
+                $uri = "/v1/streams/?context=".$sources['context']."&size=150x150c";
+                $target = 'stream/'.$sources['context'].'/';
                 break;
         }
 
-        $checksumData = "GET\n".utf8_encode($uri)."\n".$time."\n\n".get_option('phlow_sessionPrivateKey');
+        /** the HTTP verb being used, */
+        $checksumData = "GET\n";
+        /** the URI being called (request URI utf-8 encoded), */
+        $checksumData .= utf8_encode($uri)."\n";
+        /** the current Unix timestamp in seconds. (See Time stamping). */
+        $checksumData .= $time."\n";
+        /** (optional) the MD5 checksum of the body (if it’s present), */
+        /** (optional) session’s private key */
+        $checksumData .= get_option('phlow_sessionPrivateKey');
+
         $checksum = hash_hmac("SHA256", $checksumData, get_option('phlow_clientPrivateKey'), false);
 
         $curl = curl_init();
@@ -121,18 +111,26 @@ class phlow_widget {
             CURLOPT_HTTPHEADER => array(
                     'X-PHLOW:'.get_option('phlow_clientPublicKey').get_option('phlow_sessionPublicKey').$time.$checksum
                     ),
-            CURLOPT_URL => $uri
+            CURLOPT_URL => $apiUri.$uri
         ));
 
         $a = curl_exec($curl);
         $return = json_decode($a);
         curl_close($curl);
 
-        echo "<hr>";
-        echo $a;
-        echo "<hr>";
+        $returnValue = array();
+        $imageCount = 0;
+        foreach ($return->photos as $photo){
+            $returnPhoto = array(
+                    'URL' => 'https://app.phlow.com/'.$target.'photo/'.$photo->photoId,
+                    'imageLink' => $photo->url
+            );
+            $returnValue[] = $returnPhoto;
 
-        //$sources['source'], $sources['id'], $sources['clean'], $sources['nudity'], $sources['violence']
+            if ($imageCount++ >= ($limit-1)) break;
+        }
+
+        return($returnValue);
     }
     
     /*
@@ -140,7 +138,7 @@ class phlow_widget {
      */
     public function shortcode_groups_image($atts){
 
-        $imageList = $this->phlowLoadImages($atts);
+        $imageList = $this->phlowLoadImages($atts,9);
 
 
         ob_start();
@@ -170,7 +168,7 @@ class phlow_widget {
 	        echo '<div class="image-list-horizontal">';
 	        echo '<ul class="line-images">';
             foreach ($imageList as $image){
-                echo '<li><a href="'.$image['URL'].'"><img class="images-view" src="'.$image['imageLink'].'"/></a></li>';
+                echo '<li><a target="_blank" href="'.$image['URL'].'"><img class="images-view" src="'.$image['imageLink'].'"/></a></li>';
             }
 
             echo '<div class="powered-by">'
