@@ -19,6 +19,7 @@ class phlow {
 		$this->addShortcodes();
 		$this->_plugin_dir = dirname(__FILE__);
 		$this->_plugin_url = get_site_url(null, 'wp-content/plugins/' . basename($this->_plugin_dir));
+		$this->ajax_url = admin_url('admin-ajax.php');
 	}
 
 	protected function addActions() {
@@ -31,6 +32,9 @@ class phlow {
 			add_action('admin_head', array( $this, 'admin_head') );
 			add_action('admin_menu', array($this,'phlow_menu'));
 		}
+
+		// async actions
+		add_action('wp_ajax_phlow_embed_get', array($this, 'phlow_ajax_get_embed'));
 	}
 
     public function addShortcodes()
@@ -54,6 +58,12 @@ class phlow {
         wp_enqueue_script( 'ph_jquery_script', 'http://code.jquery.com/jquery-1.12.2.min.js', null, false);
         wp_register_script( 'ph_script', $this->_plugin_url .'/js/tipped/tipped.js',array('jquery'), null, false);
         wp_enqueue_script( 'ph_script');
+        wp_register_script('phlow', $this->_plugin_url . '/js/settings.js', array('jquery'), null, false);
+        wp_enqueue_script('phlow');
+
+		wp_localize_script('phlow', 'phlowAjax', array(
+			'url' => $this->ajax_url
+		));
     }
 
     private function phlowLoadImages($atts, $limit=10){
@@ -207,20 +217,27 @@ class phlow {
 	}
 
 	public function phlow_settings() {
-		if(isset($_POST['submit_main']))
-		{
-			echo '<div><strong>settings updated successfully !</strong></div>';
-			if(isset($_POST['nudity'])) {
-				update_option('nudity', '1');
-			} else {
-				update_option('nudity', '0');
-			}
+		if (isset($_POST['submit_main'])) {
+			echo '
+				<div id="setting-error-settings_updated" class="updated settings-error notice is-dismissible">
+					<p><strong>' . __('Settings updated successfully') . '</strong></p>
+					<button type="button" class="notice-dismiss">
+						<span class="screen-reader-text">' . __('Dismiss this notice') . '</span>
+					</button>
+				</div>
+			';
 
-			if(isset($_POST['violence'])) {
-				update_option('violence', '1');
-			} else {
-				update_option('violence', '0');
-			}
+			$nudity = isset($_POST['nudity']) ? '1' : '0';
+			update_option('nudity', $nudity);
+
+			$violence = isset($_POST['violence']) ? '1' : '0';
+			update_option('violence', $violence);
+
+			$embed = (int) $_POST['embed'];
+			update_option('embed', $embed);
+
+			$type = (int) $_POST['type'];
+			update_option('type', $type);
 		}
 		$url = admin_url('options-general.php?page=phlow-settings.php');
 		echo '<div class="wrap" style="margin-top:30px">';
@@ -255,16 +272,126 @@ class phlow {
 	}
 
 	/**
+	 * settings form data
+	 */
+	private function phlow_data() {
+		return array(
+			'embed_options' => array(
+				0 => __('Embed a stream'),
+				1 => __('Embed one of your magazines'),
+				2 => __('Embed a public magazine'),
+				3 => __('Embed a moment')
+			),
+			'type_options' => array(
+				0 => __('phlow group'),
+				1 => __('phlow line'),
+				2 => __('phlow stream')
+			)
+		);
+	}
+
+	private function phlow_embed_blocks($embed, $type) {
+		if ($embed == 1) {
+			$html = '
+				<p>
+					<p class="post-attributes-label-wrapper">
+						<label>' . __('Select one of your magazines') . '</label>
+					</p>
+					<select name="mymagazine">
+						<option value="0">mag 1</option>
+						<option value="1">mag 2</option>
+						<option value="2">mag 3</option>
+					</select>
+				</p>
+			';
+		}
+		else if ($embed == 2) {
+			$html = '
+				<p>
+					<p class="post-attributes-label-wrapper">
+						<label>' . __('Search for a public magazine') . '</label>
+					</p>
+					<input name="magazine" type="text" />
+				</p>
+			';
+		}
+		else if ($embed == 3) {
+			$html = '
+				<p>
+					<p class="post-attributes-label-wrapper">
+						<label>' . __('Search for a moment') . '</label>
+					</p>
+					<input name="moment" type="text" />
+				</p>
+			';
+		}
+		else {
+			$html = '
+				<p>
+					<p class="post-attributes-label-wrapper">
+						<label>' . __('Comma separated streams') . '</label>
+					</p>
+					<input name="tags" type="text" />
+				</p>
+			';
+		}
+
+		if ($type == 2) {
+			$html .= '
+				<p>
+					<p class="post-attributes-label-wrapper">
+						<label>' . __('Widget width') . '</label>
+					</p>
+					<input name="width" type="text" />
+				</p>
+				<p>
+					<p class="post-attributes-label-wrapper">
+						<label>' . __('Widget height') . '</label>
+					</p>
+					<input name="height" type="text" />
+				</p>
+			';
+		}
+
+		return $html;
+	}
+
+	/**
 	 * phlow settings page
 	 */
 	public function phlow_screen() {
+		$data = $this->phlow_data();
 		$url = admin_url('options-general.php?page=phlow-settings.php');
+		$embed = get_option('embed');
 		$nudity = get_option('nudity');
 		$violence = get_option('violence');
+		$type = get_option('type');
 
+		// nudity and violence values
 		$checked_nudity = ($nudity == '1') ? 'checked' : '';
 		$checked_violence = ($violence == '1') ? 'checked' : '';
 
+		// embedded html
+		$embed_html = '<p><select name="embed" id="phlow_embed">';
+
+		foreach ($data['embed_options'] as $key => $value) {
+			$selected = ($embed == $key) ? 'selected' : '';
+			$embed_html .= '<option value="' . $key . '" ' . $selected . '>' . $value . '</option>';
+		}
+
+		$embed_html .= '</select></p>';
+
+		// types html
+		$type_html = '<select name="type" id="phlow_type">';
+
+		foreach ($data['type_options'] as $key => $value) {
+			$selected = ($type == $key) ? 'selected' : '';
+			$type_html .= '<option value="' . $key . '" ' . $selected . '>' . $value . '</option>';
+		}
+
+		$type_html .= '</select>';
+
+		// page html
 		$html = '
 			<h1>' . __('phlow settings') . '</h1>
 			<form method="post" action="' . $url . '">
@@ -281,25 +408,13 @@ class phlow {
 				</p>
 				<hr />
 				<h2 class="title">' . __('Default settings') . '</h2>
-				<p>
-					<select name="embed">
-						<option value="0">' . __('Embed a stream') . '</option>
-						<option value="1">' . __('Embed one of your magazines') . '</option>
-						<option value="2">' . __('Embed a public magazine') . '</option>
-						<option value="3">' . __('Embed a moment') . '</option>
-					</select>
-				</p>
+				' . $embed_html . '
+				<div id="phlow_embed_box">' . $this->phlow_embed_blocks($embed, $type) . '</div>
 				<p>
 					<p class="post-attributes-label-wrapper">
-						<label>' . __('Widget width') . '</label>
+						<label>' . __('Type of widget') . '</label>
 					</p>
-					<input type="text" name="width" />
-				</p>
-				<p>
-					<p class="post-attributes-label-wrapper">
-						<label>' . __('Widget height') . '</label>
-					</p>
-					<input type="text" name="height" />
+					' . $type_html . '
 				</p>
 				<p>
 					<label>
@@ -354,6 +469,21 @@ class phlow {
 		';
 
 		echo $html;
+	}
+
+	public function phlow_ajax_get_embed() {
+		$this->query = $_GET;
+
+		$embed = $this->query['embed'];
+		$type = $this->query['type'];
+
+		$response = array(
+            'success' => true,
+            'html' => $this->phlow_embed_blocks($embed, $type)
+        );
+
+        echo json_encode($response);
+        wp_die();
 	}
 
 	public function admin_head() {
