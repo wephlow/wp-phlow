@@ -7,6 +7,9 @@
  * Author URI: http://phlow.com
  */
 
+define('PHLOW__PLUGIN_DIR', plugin_dir_path(__FILE__));
+require_once(PHLOW__PLUGIN_DIR . 'class.api.php');
+
 class phlow {
 	protected $_plugin_id = 'phlow';
 	protected $_plugin_dir ;
@@ -20,6 +23,7 @@ class phlow {
 		$this->_plugin_dir = dirname(__FILE__);
 		$this->_plugin_url = get_site_url(null, 'wp-content/plugins/' . basename($this->_plugin_dir));
 		$this->ajax_url = admin_url('admin-ajax.php');
+		$this->api = api::getInstance();
 	}
 
 	protected function addActions() {
@@ -242,7 +246,11 @@ class phlow {
 		$url = admin_url('options-general.php?page=phlow-settings.php');
 		echo '<div class="wrap" style="margin-top:30px">';
 
-		if(isset($_GET['clientPublicKey']) && isset($_GET['clientPrivateKey']) && isset($_GET['sessionPrivateKey']) && isset($_GET['sessionPublicKey'])) {
+		if (isset($_GET['clientPublicKey']) &&
+			isset($_GET['clientPrivateKey']) &&
+			isset($_GET['sessionPrivateKey']) &&
+			isset($_GET['sessionPublicKey']))
+		{
 			$clientPublicKey = $_GET['clientPublicKey'];
 			$clientPrivateKey = $_GET['clientPrivateKey'];
 			$sessionPrivateKey = $_GET['sessionPrivateKey'];
@@ -254,20 +262,35 @@ class phlow {
 			update_option('phlow_sessionPublicKey',$sessionPublicKey);
 
 			self::phlow_screen();
-		} elseif(isset($_POST['log_out'])) {
-			echo '<h2>user settings</h2>';
-			echo '<div>You have successfully logged out of phlow</div>';
-			echo '<a href="http://cp.phlow.com/clients/new?type=wordpress&redirectUrl='.$url.'">Log in to phlow</a>';
+		}
+		elseif (isset($_POST['log_out'])) {
+			echo '
+				<h1>' . __('phlow settings') . '</h1>
+				<p>' . __('You have successfully logged out of phlow') . '</p>
+				<a
+					href="http://cp.phlow.com/clients/new?type=wordpress&redirectUrl=' . $url . '"
+					class="button"
+				>' . __('Log in to phlow') . '</a>
+			';
+
 			update_option('phlow_clientPublicKey','');
 			update_option('phlow_clientPrivateKey','');
 			update_option('phlow_sessionPrivateKey','');
 			update_option('phlow_sessionPublicKey','');
-		} elseif(get_option('phlow_clientPublicKey') == null || get_option('phlow_clientPublicKey') == '' ) {
-			echo '<h2>user settings</h2>';
-			echo '<a href="http://cp.phlow.com/clients/new?type=wordpress&redirectUrl='.$url.'">Log in to phlow</a>';
-		} else {
+		}
+		elseif (get_option('phlow_clientPublicKey') == null || get_option('phlow_clientPublicKey') == '' ) {
+			echo '
+				<h1>' . __('phlow settings') . '</h1>
+				<a
+					href="http://cp.phlow.com/clients/new?type=wordpress&redirectUrl=' . $url . '"
+					class="button"
+				>' . __('Log in to phlow') . '</a>
+			';
+		}
+		else {
 			self::phlow_screen();
 		}
+
 		echo '</div>';
 	}
 

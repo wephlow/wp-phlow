@@ -1,7 +1,12 @@
 jQuery(function($) {
 
-	// embed handler
-	$('#phlow_embed').on('change', function() {
+	var props = {
+		embedSelect: $('#phlow_embed'),
+		typeSelect: $('#phlow_type'),
+		embedBox: $('#phlow_embed_box')
+	};
+
+	var embedHandler = function() {
 		var element = $(this);
 
 		element.prop({ disabled: true });
@@ -12,13 +17,13 @@ jQuery(function($) {
 			dataType: 'json',
 			data: {
 				action: 'phlow_embed_get',
-				embed: element.val(),
-				type: $('#phlow_type').val()
+				embed: props.embedSelect.val(),
+				type: props.typeSelect.val()
 			}
 		});
 
 		req.done(function(res) {
-			$('#phlow_embed_box').html(res.html);
+			props.embedBox.html(res.html);
 		});
 
 		req.fail(function(err) {
@@ -27,6 +32,12 @@ jQuery(function($) {
 
 		req.always(function() {
 			element.prop({ disabled: false });
-		})
-	});
+		});
+	};
+
+	// embed handler
+	props.embedSelect.on('change', embedHandler.bind(this));
+
+	// type handler
+	props.typeSelect.on('change', embedHandler.bind(this));
 });
