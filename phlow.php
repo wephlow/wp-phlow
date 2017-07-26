@@ -257,6 +257,9 @@ class phlow {
 		// source
 		$source = $query['source'];
 
+        // type
+        $type = $query['type'];
+
 		if ($source == 1) {
 			$src_val = 'magazine';
 			$context = trim($query['mymagazine']);
@@ -271,13 +274,14 @@ class phlow {
 		}
 		else {
 			$src_val = 'streams';
-			$context = str_replace(',', '-', trim($query['tags']));
+            if ( $type != 2 ) {
+                $context = str_replace('-', ',', trim($query['tags']));
+            } else {
+                $context = str_replace(',', '-', trim($query['tags']));
+            }
 			$context = str_replace(' ', '', $context);
 			$context = str_replace('#', '', $context);
 		}
-
-		// type
-		$type = $query['type'];
 
 		if ($type == 1) {
 			$type_val = 'phlow_line';
