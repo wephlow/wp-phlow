@@ -1,6 +1,7 @@
-console.log(my_plugin.url);
+console.log(phlow_plugin.src);
+
 (function() {
-    tinymce.PluginManager.add('phlow_stream', function( editor, url ) {
+    tinymce.PluginManager.add('phlow_stream', function(editor, url) {
         var sh_tag = 'phlow_stream';
 
         //helper functions
@@ -9,7 +10,7 @@ console.log(my_plugin.url);
             return n ?  window.decodeURIComponent(n[1]) : '';
         };
 
-        function html( cls, data ,con) {
+        function html(cls, data, con) {
             var placeholder = url + '/img/' + getAttr(data,'type') + '.jpg';
             data = window.encodeURIComponent( data );
             content = window.encodeURIComponent( con );
@@ -17,7 +18,7 @@ console.log(my_plugin.url);
             return '<img src="' + placeholder + '" class="mceItem ' + cls + '" ' + 'data-sh-attr="' + data + '" data-sh-content="'+ con+'" data-mce-resize="false" data-mce-placeholder="1" />';
         }
 
-        function replaceShortcodes( content ) {
+        function replaceShortcodes(content) {
             return content.replace( /\[phlow_stream([^\]]*)\]([^\]]*)\[\/phlow_stream\]/g, function( all,attr,con) {
                 return html( 'wp-phlow_stream', attr , con);
             });
@@ -39,18 +40,46 @@ console.log(my_plugin.url);
         editor.addCommand('phlow_stream_popup', function(ui, v) {
             //setup defaults
             var tag = '';
-            if (v.tag)
+            if (v.tag) {
                 tag = v.tag;
-            editor.windowManager.open( {
+            }
+
+            var wm = editor.windowManager.open({
                 title: 'generate shortcode',
                 body: [
+                    // {
+                    //     type: 'listbox',
+                    //     name: 'source',
+                    //     label: 'Source',
+                    //     values: phlow_plugin.src.options.map(function(value, key) {
+                    //         return { text: value, value: key }
+                    //     }),
+                    //     value: phlow_plugin.src.selected,
+                    //     tooltip: 'Leave blank for none',
+                    //     onselect: function(e) {
+                    //         var tags = wm.find('#tags')[0];
+                    //         console.log(tags);
+                    //         tags.visible( Boolean(this.value() == 0) );
+                    //     }
+                    // },
                     {
                         type: 'textbox',
-                        name: 'tag',
+                        name: 'tags',
                         label: 'Tags',
                         value: tag,
-                        tooltip: 'Leave blank for none'
+                        tooltip: 'Leave blank for none',
+                        hidden: Boolean( phlow_plugin.src.selected != 0 )
                     },
+                    // {
+                    //     type: 'listbox',
+                    //     name: 'type',
+                    //     label: 'Type of widget',
+                    //     values: phlow_plugin.type.options.map(function(value, key) {
+                    //         return { text: value, value: key }
+                    //     }),
+                    //     value: phlow_plugin.type.selected,
+                    //     tooltip: 'Leave blank for none'
+                    // },
                     {
                         type: 'checkbox',
                         name: 'footer',
@@ -59,29 +88,29 @@ console.log(my_plugin.url);
                     },
                     {
                         type: 'checkbox',
-                        name: 'nudes',
-                        checked: my_plugin.nudity,
+                        name: 'nudity',
+                        checked: phlow_plugin.nudity,
                         label: 'allow images containing nudity',
                     },
                     {
                         type: 'checkbox',
                         name: 'violence',
-                        checked: my_plugin.violence,
+                        checked: phlow_plugin.violence,
                         label: 'allow violent images',
                     }
                 ],
                 onsubmit: function( e ) {
                     var shortcode_str = '[' + sh_tag ;
                     //check for header
-                    if (typeof e.data.tag != 'undefined' && e.data.tag.length)
-                        shortcode_str += ' tags="' + e.data.tag + '"';
+                    if (typeof e.data.tags != 'undefined' && e.data.tags.length)
+                        shortcode_str += ' tags="' + e.data.tags + '"';
 
                     if (e.data.footer === "1"){
                         shortcode_str += ' clean="1"';
                     }else{
                         shortcode_str += ' clean="0"';
                     }
-                    if (e.data.nudes == true){
+                    if (e.data.nudity == true){
                         shortcode_str += ' nudity="1"';
                     }else{
                         shortcode_str += ' nudity="0"';
@@ -103,7 +132,7 @@ console.log(my_plugin.url);
 
         //add button
         editor.addButton('phlow_stream', {
-            image : my_plugin.url + 'js/phlow-logo.jpg',
+            image : phlow_plugin.url + 'js/phlow-logo.jpg',
             tooltip: 'phlow stream generator',
             onclick: function() {
                 editor.execCommand('phlow_stream_popup','',{

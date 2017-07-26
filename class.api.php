@@ -6,7 +6,7 @@
 class api {
     // The singleton instance
 	private static $instance = null;
-	private static $url = 'https://api.phlow.com';
+	private static $apiUrl = 'https://api.phlow.com';
 
 	public static function getInstance() {
 		if (self::$instance == null) {
@@ -38,7 +38,7 @@ class api {
 			array_push($strings, $sessionKeys['privateKey']);
 		}
 
-		$checksum = hash_hmac('SHA256', $clientKeys['privateKey'], join("\n", $strings));
+		$checksum = hash_hmac('SHA256', join("\n", $strings), $clientKeys['privateKey'], false);
 		$sessionPublicKey = empty($sessionKeys['publicKey']) ? '' : $sessionKeys['publicKey'];
 
 		return $clientKeys['publicKey'] . $sessionPublicKey . $time . $checksum;
@@ -46,13 +46,14 @@ class api {
 
 	private function signedRequest($method, $endpoint, $body) {
 		$uri = '/v1' . $endpoint;
-		$url = $this->url . $uri;
+		$url = self::$apiUrl . $uri;
+		$time = $this->time();
 
 		$curl = curl_init();
 		curl_setopt_array($curl, array(
 			CURLOPT_RETURNTRANSFER => 1,
 			CURLOPT_HTTPHEADER => array(
-				'X-PHLOW:' . $this->generateSignature(time(), $method, $body)
+				'X-PHLOW:' . $this->generateSignature($time, $method, $uri, $body)
 			),
 			CURLOPT_URL => $url
 		));
@@ -61,5 +62,46 @@ class api {
 		curl_close($curl);
 
 		return $result;
+	}
+
+	public function time() {
+		$curl = curl_init();
+		curl_setopt_array($curl, array(
+		    CURLOPT_RETURNTRANSFER => 1,
+		    CURLOPT_URL => self::$apiUrl . '/v1/time'
+		));
+
+		$time = json_decode(curl_exec($curl))->time;
+		curl_close($curl);
+
+		return $time;
+	}
+
+	public function me() {
+		return $this->signedRequest('GET', '/users/me');
+	}
+
+	public function userMagazines($userId) {
+		return $this->signedRequest('GET', '/users/' . $userId . '/magazines');
+	}
+
+	public function searchMagazines($string) {
+		return $this->signedRequest('GET', '/search/magazines?q=' . $string);
+	}
+
+	public function searchMoments($string) {
+		return $this->signedRequest('GET', '/events/search?name=' . $string);
+	}
+
+	public function streams($queryString) {
+		return $this->signedRequest('GET', '/streams?' . $queryString);
+	}
+
+	public function magazines($magazineId, $queryString) {
+		return $this->signedRequest('GET', '/magazines/' . $magazineId . '?' . $queryString);
+	}
+
+	public function moments($momentId, $queryString) {
+		return $this->signedRequest('GET', '/events/' . $momentId . '?' . $queryString);
 	}
 }
