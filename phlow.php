@@ -89,9 +89,10 @@ class phlow {
 		$images = array();
 		$counter = 0;
 
+        $queryString = 'size=150x150c&nudity='.$nudity.'&violence='.$violence;
+
 		// magazine
 		if ($source == 'magazine') {
-			$queryString = 'size=150x150c';
 			$photos = $this->api->magazines($context, $queryString)->photos;
 
 			foreach ($photos as $photo) {
@@ -107,7 +108,6 @@ class phlow {
 		}
 		// moment
 		else if ($source == 'moment') {
-			$queryString = 'size=150x150c';
 			$photos = $this->api->moments($context, $queryString)->photos;
 
 			foreach ($photos as $photo) {
@@ -123,7 +123,7 @@ class phlow {
 		}
 		// streams
 		else {
-			$queryString = 'context=' . $context . '&size=150x150c';
+			$queryString = 'context=' . $context . '&' . $queryString;
 			$photos = $this->api->streams($queryString)->photos;
 
 			foreach ($photos as $photo) {
