@@ -44,7 +44,7 @@ class api {
 		return $clientKeys['publicKey'] . $sessionPublicKey . $time . $checksum;
 	}
 
-	private function signedRequest($method, $endpoint, $body) {
+	private function signedRequest($method, $endpoint, $body=null) {
 		$uri = '/v1' . $endpoint;
 		$url = self::$apiUrl . $uri;
 		$time = $this->time();

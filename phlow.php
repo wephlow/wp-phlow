@@ -94,9 +94,10 @@ class phlow {
 		$images = array();
 		$counter = 0;
 
+        $queryString = 'size=150x150c&nudity='.$nudity.'&violence='.$violence;
+
 		// magazine
 		if ($source == 'magazine') {
-			$queryString = 'size=150x150c';
 			$photos = $this->api->magazines($context, $queryString)->photos;
 
 			foreach ($photos as $photo) {
@@ -112,7 +113,6 @@ class phlow {
 		}
 		// moment
 		else if ($source == 'moment') {
-			$queryString = 'size=150x150c';
 			$photos = $this->api->moments($context, $queryString)->photos;
 
 			foreach ($photos as $photo) {
@@ -128,7 +128,7 @@ class phlow {
 		}
 		// streams
 		else {
-			$queryString = 'context=' . $context . '&size=150x150c';
+			$queryString = 'context=' . $context . '&' . $queryString;
 			$photos = $this->api->streams($queryString)->photos;
 
 			foreach ($photos as $photo) {
@@ -262,6 +262,9 @@ class phlow {
 		// source
 		$source = $query['source'];
 
+        // type
+        $type = $query['type'];
+
 		if ($source == 1) {
 			$src_val = 'magazine';
 			$context = trim($query['mymagazine']);
@@ -276,13 +279,14 @@ class phlow {
 		}
 		else {
 			$src_val = 'streams';
-			$context = str_replace(',', '-', trim($query['tags']));
+            if ( $type != 2 ) {
+                $context = str_replace('-', ',', trim($query['tags']));
+            } else {
+                $context = str_replace(',', '-', trim($query['tags']));
+            }
 			$context = str_replace(' ', '', $context);
 			$context = str_replace('#', '', $context);
 		}
-
-		// type
-		$type = $query['type'];
 
 		if ($type == 1) {
 			$type_val = 'phlow_line';
