@@ -69,10 +69,12 @@ class phlow {
         wp_enqueue_script('ph_jquery_script', 'http://code.jquery.com/jquery-1.12.2.min.js', null, false);
         wp_register_script('ph_script', $this->_plugin_url .'/js/tipped/tipped.js', array('jquery'), null, false);
         wp_enqueue_script('ph_script');
-        wp_register_script('phlow', $this->_plugin_url . '/js/generator.js', array('jquery'), null, false);
+        wp_register_script('phlow', $this->_plugin_url . '/js/generator.js?t=' . time(), array('jquery'), null, false);
         wp_enqueue_script('phlow');
         wp_register_script('phlow_autocomplete', $this->_plugin_url . '/js/autocomplete/jquery.easy-autocomplete.min.js', array('jquery'), null, false);
         wp_enqueue_script('phlow_autocomplete');
+        wp_register_script('phlow_clipboard', $this->_plugin_url . '/js/clipboard.min.js', array(), null, false);
+        wp_enqueue_script('phlow_clipboard');
 
 		// js variables
 		wp_localize_script('phlow', 'phlowAjax', array(
@@ -722,7 +724,9 @@ class phlow {
 			$shortcode_html = '
 				<br /><hr />
 				<h2 class="title">' . __('Shortcode') . '</h2>
-				<textarea cols="60" rows="3" disabled>' . $shortcode . '</textarea>
+				<p id="phlow_shortcode_box">
+					<textarea id="phlow_shortcode" cols="60" rows="3" readonly>' . $shortcode . '</textarea>
+				</p>
 			';
 		}
 

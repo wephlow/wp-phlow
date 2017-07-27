@@ -6,6 +6,9 @@ jQuery(function($) {
 		sourceBox: $('#phlow_source_box')
 	};
 
+	/**
+	 * Receiving HTML block of a specific source
+	 */
 	var getSourceBlock = function() {
 		var element = $(this),
 			source = Number(props.sourceSelect.val()),
@@ -44,6 +47,9 @@ jQuery(function($) {
 	// type handler
 	props.typeSelect.on('change', getSourceBlock.bind(this));
 
+	/**
+	 * Running source handlers
+	 */
 	var sourcesInit = function(src) {
 		switch(src) {
 			case 2:
@@ -55,6 +61,9 @@ jQuery(function($) {
 		}
 	}
 
+	/**
+	 * Magazines search handler
+	 */
 	var magazineHandler = function() {
 		var inputName = $('#phlow_magazine_name'),
 			inputId = $('#phlow_magazine_id');
@@ -74,6 +83,9 @@ jQuery(function($) {
 		});
 	}
 
+	/**
+	 * Moments search handler
+	 */
 	var momentHandler = function() {
 		var inputName = $('#phlow_moment_name'),
 			inputId = $('#phlow_moment_id');
@@ -93,7 +105,32 @@ jQuery(function($) {
 		});
 	}
 
+	/**
+	 * Copying to the clipboard handler
+	 */
+	var clipboardInit = function() {
+		var textarea = $('#phlow_shortcode'),
+			block = $('#phlow_shortcode_box');
+		
+		if (!textarea.length) {
+			return;
+		}
+
+		var button = $('<button>')
+			.addClass('button')
+			.attr({
+				'data-clipboard-target': '#' + textarea.prop('id'),
+				'id': 'phlow_clipboard'
+			})
+			.text('Copy to clipboard');
+
+		block.after(button);
+
+		new Clipboard('#phlow_clipboard');
+	}
+
 	// initialization
 	var source = Number(props.sourceSelect.val());
 	sourcesInit(source);
+	clipboardInit();
 });
