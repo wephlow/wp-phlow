@@ -232,7 +232,7 @@ class phlow {
 		$height = $atts['height'];
 		$clean = $atts['clean'];
 		$nudity = $atts['nudity'];
-		$violence = $a['violence'];
+		$violence = $atts['violence'];
 
 		$url = 'http://app.phlow.com';
 
@@ -462,6 +462,8 @@ class phlow {
 			$sessionPrivateKey = $_GET['sessionPrivateKey'];
 			$sessionPublicKey = $_GET['sessionPublicKey'];
 
+			phlow_admin_notice__success(); // logged in message
+
 			update_option('phlow_clientPublicKey', $clientPublicKey);
 			update_option('phlow_clientPrivateKey', $clientPrivateKey);
 			update_option('phlow_sessionPrivateKey', $sessionPrivateKey);
@@ -473,10 +475,12 @@ class phlow {
 			echo '
 				<h1>' . __('phlow settings') . '</h1>
 				<p>' . phlow_message_success(__('You have successfully logged out of phlow')) . '</p>
-				<a
-					href="http://cp.phlow.com/clients/new?type=wordpress&redirectUrl=' . $url . '"
-					class="button"
-				>' . __('Log in to phlow') . '</a>
+				<p>
+					<a
+						href="http://cp.phlow.com/clients/new?type=wordpress&redirectUrl=' . $url . '"
+						class="button"
+					>' . __('Log in to phlow') . '</a>
+				</p>
 			';
 
 			update_option('phlow_clientPublicKey','');
@@ -487,10 +491,12 @@ class phlow {
 		elseif (get_option('phlow_clientPublicKey') == null || get_option('phlow_clientPublicKey') == '' ) {
 			echo '
 				<h1>' . __('phlow settings') . '</h1>
-				<a
-					href="http://cp.phlow.com/clients/new?type=wordpress&redirectUrl=' . $url . '"
-					class="button"
-				>' . __('Log in to phlow') . '</a>
+				<p>
+					<a
+						href="http://cp.phlow.com/clients/new?type=wordpress&redirectUrl=' . $url . '"
+						class="button"
+					>' . __('Log in to phlow') . '</a>
+				</p>
 			';
 		}
 		else {
@@ -1109,7 +1115,6 @@ function phlow_admin_notice__success() {
 		echo phlow_message_success(__('phlow is activated! Visit the plugin settings page to start using the plugin'));
     }
 }
-add_action('admin_notices', 'phlow_admin_notice__success');
 
 function phlow_register_widget() {
 	if (get_option('phlow_clientPublicKey') != null ||
