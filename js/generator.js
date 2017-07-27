@@ -3,7 +3,8 @@ jQuery(function($) {
 	var props = {
 		sourceSelect: $('#phlow_source'),
 		typeSelect: $('#phlow_type'),
-		sourceBox: $('#phlow_source_box')
+		sourceBox: $('#phlow_source_box'),
+		typeBox: $('#phlow_type_box')
 	};
 
 	/**
@@ -11,8 +12,7 @@ jQuery(function($) {
 	 */
 	var getSourceBlock = function() {
 		var element = $(this),
-			source = Number(props.sourceSelect.val()),
-			type = props.typeSelect.val();
+			source = Number(props.sourceSelect.val());
 
 		element.prop({ disabled: true });
 
@@ -22,8 +22,7 @@ jQuery(function($) {
 			dataType: 'json',
 			data: {
 				action: 'phlow_source_get',
-				source: source,
-				type: type
+				source: source
 			}
 		});
 
@@ -44,8 +43,40 @@ jQuery(function($) {
 	// source handler
 	props.sourceSelect.on('change', getSourceBlock.bind(this));
 
+	/**
+	 * Receiving HTML block of a specific source
+	 */
+	var getTypeBlock = function() {
+		var element = $(this),
+			type = props.typeSelect.val();
+
+		element.prop({ disabled: true });
+
+		var req = $.ajax({
+			method: 'GET',
+			url: phlowAjax.url,
+			dataType: 'json',
+			data: {
+				action: 'phlow_type_get',
+				type: type
+			}
+		});
+
+		req.done(function(res) {
+			props.typeBox.html(res.html);
+		});
+
+		req.fail(function(err) {
+			console.error(err);
+		});
+
+		req.always(function() {
+			element.prop({ disabled: false });
+		});
+	}
+
 	// type handler
-	props.typeSelect.on('change', getSourceBlock.bind(this));
+	props.typeSelect.on('change', getTypeBlock.bind(this));
 
 	/**
 	 * Running source handlers

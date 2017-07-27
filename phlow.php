@@ -39,6 +39,7 @@ class phlow {
 
 		// async actions
 		add_action('wp_ajax_phlow_source_get', array($this, 'phlow_ajax_get_source'));
+		add_action('wp_ajax_phlow_type_get', array($this, 'phlow_ajax_get_type'));
 		add_action('wp_ajax_phlow_magazines_search', array($this, 'phlow_ajax_search_magazines'));
 		add_action('wp_ajax_phlow_moments_search', array($this, 'phlow_ajax_search_moments'));
 	}
@@ -69,7 +70,7 @@ class phlow {
         wp_enqueue_script('ph_jquery_script', 'http://code.jquery.com/jquery-1.12.2.min.js', null, false);
         wp_register_script('ph_script', $this->_plugin_url .'/js/tipped/tipped.js', array('jquery'), null, false);
         wp_enqueue_script('ph_script');
-        wp_register_script('phlow', $this->_plugin_url . '/js/generator.js?t=' . time(), array('jquery'), null, false);
+        wp_register_script('phlow', $this->_plugin_url . '/js/generator.js', array('jquery'), null, false);
         wp_enqueue_script('phlow');
         wp_register_script('phlow_autocomplete', $this->_plugin_url . '/js/autocomplete/jquery.easy-autocomplete.min.js', array('jquery'), null, false);
         wp_enqueue_script('phlow_autocomplete');
@@ -405,46 +406,47 @@ class phlow {
 				}
 			}
 
+			// Update form data
+			update_option('nudity', $nudity);
+			update_option('violence', $violence);
+			update_option('source', $source);
+			update_option('type', $type);
+
+			if (isset($tags)) {
+				update_option('tags', $tags);
+			}
+
+			if (isset($magazine_name)) {
+				update_option('magazine_name', $magazine_name);
+			}
+
+			if (isset($magazine_id)) {
+				update_option('magazine_id', $magazine_id);
+			}
+
+			if (isset($moment_name)) {
+				update_option('moment_name', $moment_name);
+			}
+
+			if (isset($moment_id)) {
+				update_option('moment_id', $moment_id);
+			}
+
+			if (isset($width)) {
+				update_option('width', $width);
+			}
+
+			if (isset($height)) {
+				update_option('height', $height);
+			}
+
+			// Check errors
 			if (count($errors)) {
-				// Save data for correction
-				update_option('nudity', $nudity);
-				update_option('violence', $violence);
-				update_option('source', $source);
-				update_option('type', $type);
-
-				if (isset($tags)) {
-					update_option('tags', $tags);
-				}
-
-				if (isset($magazine_name)) {
-					update_option('magazine_name', $magazine_name);
-				}
-
-				if (isset($magazine_id)) {
-					update_option('magazine_id', $magazine_id);
-				}
-
-				if (isset($moment_name)) {
-					update_option('moment_name', $moment_name);
-				}
-
-				if (isset($moment_id)) {
-					update_option('moment_id', $moment_id);
-				}
-
-				if (isset($width)) {
-					update_option('width', $width);
-				}
-
-				if (isset($height)) {
-					update_option('height', $height);
-				}
-
 				echo phlow_message_error($errors);
 			}
 			else {
 				$shortcode = $this->phlow_generate_shortcode($_POST);
-				$this->phlow_generator_reset();
+				$this->phlow_shortcode_reset();
 				update_option('shortcode', $shortcode);
 
 				echo phlow_message_success(__('Shortcode generated successfully'));
@@ -500,6 +502,11 @@ class phlow {
 			';
 		}
 		else {
+			if (!count($_POST)) {
+				$this->phlow_generator_reset();
+				$this->phlow_shortcode_reset();
+			}
+
 			self::phlow_settings_html();
 		}
 
@@ -507,7 +514,7 @@ class phlow {
 	}
 
 	/**
-	 * clear saved options of generator form
+	 * clear saved data of generator form
 	 */
 	private function phlow_generator_reset() {
 		delete_option('source');
@@ -522,6 +529,12 @@ class phlow {
 		delete_option('type');
 		delete_option('nudity');
 		delete_option('violence');
+	}
+
+	/**
+	 * clear saved shortcode
+	 */
+	private function phlow_shortcode_reset() {
 		delete_option('shortcode');
 	}
 
@@ -685,6 +698,7 @@ class phlow {
 		$type = get_option('type');
 		$shortcode = get_option('shortcode');
 
+		// nudity and violence values
 		$nudity = is_numeric(get_option('nudity'))
 			? get_option('nudity')
 			: get_option('default_nudity');
@@ -693,7 +707,6 @@ class phlow {
 			? get_option('violence')
 			: get_option('default_violence');
 
-		// nudity and violence values
 		$checked_nudity = ($nudity == '1') ? 'checked' : '';
 		$checked_violence = ($violence == '1') ? 'checked' : '';
 
@@ -746,7 +759,8 @@ class phlow {
 					</p>
 					' . $source_html . '
 				</p>
-				<div id="phlow_source_box">' . $this->phlow_source_blocks($source, $type) . '</div>
+				<div id="phlow_source_box">' . $this->phlow_source_blocks($source) . '</div>
+				<div id="phlow_type_box">' . $this->phlow_type_blocks($type) . '</div>
 				<p>
 					<label>
 						<input type="checkbox" name="streams" disabled />
@@ -800,8 +814,8 @@ class phlow {
 			</script>
 		';
 
-		// clear saved options
-		$this->phlow_generator_reset();
+		// clear saved shortcode
+		$this->phlow_shortcode_reset();
 
 		return $html;
 	}
@@ -809,7 +823,41 @@ class phlow {
 	/**
 	 * phlow sources forms
 	 */
-	private function phlow_source_blocks($source, $type) {
+	private function phlow_type_blocks($type) {
+		$html = '<div></div>';
+
+		// phlow stream
+		if ($type == 2) {
+			$width = get_option('width');
+			$width = (isset($width) && is_numeric($width)) ? $width : 320;
+
+			$height = get_option('height');
+			$height = (isset($height) && is_numeric($height)) ? $height : 640;
+
+			$html = '
+				<p>
+					<p class="post-attributes-label-wrapper">
+						<label>' . __('Widget width') . '</label>
+					</p>
+					<input name="width" type="number" value="' . $width . '" />
+				</p>
+				<p>
+					<p class="post-attributes-label-wrapper">
+						<label>' . __('Widget height') . '</label>
+					</p>
+					<input name="height" type="number" value="' . $height . '" />
+				</p>
+			';
+		}
+
+		return $html;
+	}
+
+	/**
+	 * phlow sources forms
+	 */
+	private function phlow_source_blocks($source) {
+		// my magazine
 		if ($source == 1) {
 			$user = $this->api->me();
 			$magazines = $this->api->userMagazines($user->userId)->magazines;
@@ -828,6 +876,7 @@ class phlow {
 				</p>
 			';
 		}
+		// public magazine
 		else if ($source == 2) {
 			$name = get_option('magazine_name');
 			$name = (isset($name) && !empty($name)) ? $name : '';
@@ -856,6 +905,7 @@ class phlow {
 				</p>
 			';
 		}
+		// moment
 		else if ($source == 3) {
 			$name = get_option('moment_name');
 			$name = (isset($name) && !empty($name)) ? $name : '';
@@ -884,6 +934,7 @@ class phlow {
 				</p>
 			';
 		}
+		// streams
 		else {
 			$tags = get_option('tags');
 			$tags = (isset($tags) && !empty($tags)) ? $tags : '';
@@ -903,40 +954,29 @@ class phlow {
 			';
 		}
 
-		if ($type == 2) {
-			$width = get_option('width');
-			$width = (isset($width) && is_numeric($width)) ? $width : 320;
-
-			$height = get_option('height');
-			$height = (isset($height) && is_numeric($height)) ? $height : 640;
-
-			$html .= '
-				<p>
-					<p class="post-attributes-label-wrapper">
-						<label>' . __('Widget width') . '</label>
-					</p>
-					<input name="width" type="number" value="' . $width . '" />
-				</p>
-				<p>
-					<p class="post-attributes-label-wrapper">
-						<label>' . __('Widget height') . '</label>
-					</p>
-					<input name="height" type="number" value="' . $height . '" />
-				</p>
-			';
-		}
-
 		return $html;
+	}
+
+	public function phlow_ajax_get_type() {
+		$this->query = $_GET;
+		$type = $this->query['type'];
+
+		$response = array(
+            'success' => true,
+            'html' => $this->phlow_type_blocks($type)
+        );
+
+        echo json_encode($response);
+        wp_die();
 	}
 
 	public function phlow_ajax_get_source() {
 		$this->query = $_GET;
 		$source = $this->query['source'];
-		$type = $this->query['type'];
 
 		$response = array(
             'success' => true,
-            'html' => $this->phlow_source_blocks($source, $type)
+            'html' => $this->phlow_source_blocks($source)
         );
 
         echo json_encode($response);
