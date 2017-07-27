@@ -462,8 +462,6 @@ class phlow {
 			$sessionPrivateKey = $_GET['sessionPrivateKey'];
 			$sessionPublicKey = $_GET['sessionPublicKey'];
 
-			phlow_admin_notice__success(); // logged in message
-
 			update_option('phlow_clientPublicKey', $clientPublicKey);
 			update_option('phlow_clientPrivateKey', $clientPrivateKey);
 			update_option('phlow_sessionPrivateKey', $sessionPrivateKey);
@@ -1108,13 +1106,23 @@ function plugin_add_settings_link( $links ) {
 $plugin = plugin_basename(__FILE__);
 add_filter("plugin_action_links_$plugin", 'plugin_add_settings_link');
 
-function phlow_admin_notice__success() {
-	if (get_option('phlow_clientPublicKey') == null ||
-		get_option('phlow_clientPublicKey') == '')
-	{
-		echo phlow_message_success(__('phlow is activated! Visit the plugin settings page to start using the plugin'));
-    }
+// Activation
+register_activation_hook(__FILE__, 'phlow_activation_hook');
+
+function phlow_activation_hook() {
+	delete_option('show_activation_message');
 }
+
+function phlow_admin_notice__success() {
+	$show_once = get_option('show_activation_message');
+
+	if (!$show_once) {
+		$url = admin_url('options-general.php?page=phlow-settings.php');
+		echo phlow_message_success(__('<b>phlow</b> is activated! Visit <a href="' . $url . '">the plugin settings page</a> to start using the plugin'));
+		update_option('show_activation_message', true);
+	}
+}
+add_action('admin_notices', 'phlow_admin_notice__success');
 
 function phlow_register_widget() {
 	if (get_option('phlow_clientPublicKey') != null ||
@@ -1124,6 +1132,7 @@ function phlow_register_widget() {
 	}
 }
 
+// Messages
 function phlow_message_success($msg) {
 	if (is_array($msg)) {
 		$msg = join('<br />', $msg);
