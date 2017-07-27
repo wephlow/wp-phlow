@@ -1035,11 +1035,6 @@ class phlow {
 		$plugin_url = plugins_url('/', __FILE__);
 		$data = $this->phlow_data();
 
-		// $nudity = (get_option('nudity') == '1') ? true : false;
-		// $violence = (get_option('violence') == '1') ? true : false;
-		// $source = get_option('source');
-		// $type = get_option('type');
-		
 		$nudity = (get_option('default_nudity') == '1') ? true : false;
 		$violence = (get_option('default_violence') == '1') ? true : false;
 
@@ -1081,8 +1076,7 @@ class phlow {
      * @return array
      */
 	public function mce_external_plugins( $plugin_array ) {
-    	// $plugin_array[$this->shortcode_tag] = plugins_url( 'mce_plugin/js/mce-button.js' , __FILE__ );
-    	$plugin_array[$this->shortcode_tag] = plugins_url('mce_plugin/js/mce-button.js?t=' . time() , __FILE__);
+    	$plugin_array[$this->shortcode_tag] = plugins_url( 'mce_plugin/js/mce-button.js' , __FILE__ );
     	return $plugin_array;
     }
 
