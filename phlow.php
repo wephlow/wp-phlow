@@ -38,8 +38,10 @@ class phlow {
 		}
 
 		// async actions
+		add_action('wp_ajax_phlow_auth_check', array($this, 'phlow_ajax_check_auth'));
 		add_action('wp_ajax_phlow_source_get', array($this, 'phlow_ajax_get_source'));
 		add_action('wp_ajax_phlow_type_get', array($this, 'phlow_ajax_get_type'));
+		add_action('wp_ajax_phlow_magazines_get', array($this, 'phlow_ajax_get_magazines'));
 		add_action('wp_ajax_phlow_magazines_search', array($this, 'phlow_ajax_search_magazines'));
 		add_action('wp_ajax_phlow_moments_search', array($this, 'phlow_ajax_search_moments'));
 	}
@@ -62,7 +64,7 @@ class phlow {
     	// styles
     	wp_register_style('ph_css', $this->_plugin_url . '/css/tipped/tipped.css', false, '1.0.0');
         wp_enqueue_style('ph_css');
-        wp_enqueue_style('phlow_shortcode', $this->_plugin_url .'/css/mce-button.css' );
+        wp_enqueue_style('phlow_shortcode', $this->_plugin_url .'/mce_plugin/css/mce-button.css' );
         wp_enqueue_style('phlow_autocomplete', $this->_plugin_url .'/css/autocomplete/easy-autocomplete.min.css');
         wp_enqueue_style('phlow', $this->_plugin_url .'/css/phlow.css');
 
@@ -970,6 +972,21 @@ class phlow {
         wp_die();
 	}
 
+	public function phlow_ajax_check_auth() {
+		$check = (
+			get_option('phlow_clientPublicKey') != null ||
+			get_option('phlow_clientPublicKey') != ''
+		);
+
+		$response = array(
+            'success' => $check,
+            'url' => admin_url('options-general.php?page=phlow-settings.php')
+        );
+
+        echo json_encode($response);
+        wp_die();
+	}
+
 	public function phlow_ajax_get_source() {
 		$this->query = $_GET;
 		$source = $this->query['source'];
@@ -977,6 +994,19 @@ class phlow {
 		$response = array(
             'success' => true,
             'html' => $this->phlow_source_blocks($source)
+        );
+
+        echo json_encode($response);
+        wp_die();
+	}
+
+	public function phlow_ajax_get_magazines() {
+		$user = $this->api->me();
+		$magazines = $this->api->userMagazines($user->userId)->magazines;
+
+		$response = array(
+            'success' => true,
+            'data' => $magazines
         );
 
         echo json_encode($response);
@@ -1005,16 +1035,20 @@ class phlow {
 		$plugin_url = plugins_url('/', __FILE__);
 		$data = $this->phlow_data();
 
-		$nudity = (get_option('nudity') == '1') ? true : false;
-		$violence = (get_option('violence') == '1') ? true : false;
-		$source = get_option('source');
-		$type = get_option('type');
+		// $nudity = (get_option('nudity') == '1') ? true : false;
+		// $violence = (get_option('violence') == '1') ? true : false;
+		// $source = get_option('source');
+		// $type = get_option('type');
+		
+		$nudity = (get_option('default_nudity') == '1') ? true : false;
+		$violence = (get_option('default_violence') == '1') ? true : false;
 
         // TinyMCE Shortcode Plugin
 		echo '
 			<script type="text/javascript">
 			var phlow_plugin = {
 				url: "' . $plugin_url . '",
+				ajax_url: "' . $this->ajax_url . '",
 				nudity: "' . $nudity . '",
 				violence: "' . $violence . '"
 			};
@@ -1047,8 +1081,8 @@ class phlow {
      * @return array
      */
 	public function mce_external_plugins( $plugin_array ) {
-    	// $plugin_array[$this->shortcode_tag] = plugins_url( 'js/mce-button.js' , __FILE__ );
-    	$plugin_array[$this->shortcode_tag] = plugins_url('js/mce-button.js?t=' . time() , __FILE__);
+    	// $plugin_array[$this->shortcode_tag] = plugins_url( 'mce_plugin/js/mce-button.js' , __FILE__ );
+    	$plugin_array[$this->shortcode_tag] = plugins_url('mce_plugin/js/mce-button.js?t=' . time() , __FILE__);
     	return $plugin_array;
     }
 

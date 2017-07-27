@@ -44,7 +44,7 @@ jQuery(function($) {
 	props.sourceSelect.on('change', getSourceBlock.bind(this));
 
 	/**
-	 * Receiving HTML block of a specific source
+	 * Receiving HTML block of a specific type
 	 */
 	var getTypeBlock = function() {
 		var element = $(this),
