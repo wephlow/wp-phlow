@@ -1,0 +1,17 @@
+/* forms */
+.form-control {
+	width: 250px;
+	height: 28px;
+}
+
+/* autocomplete override */
+.easy-autocomplete-container ul li {
+	margin: 0;
+}
+
+.easy-autocomplete input {
+	line-height: 1;
+	padding: 3px 5px;
+	border-radius: inherit;
+	border-color: #ddd;
+}

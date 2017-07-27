@@ -58,18 +58,23 @@ class phlow {
     }
 
     public function enqueue() {
-    	wp_register_style( 'ph_css', $this->_plugin_url . '/css/tipped/tipped.css', false, '1.0.0' );
-        wp_enqueue_style( 'ph_css' );
+    	// styles
+    	wp_register_style('ph_css', $this->_plugin_url . '/css/tipped/tipped.css', false, '1.0.0');
+        wp_enqueue_style('ph_css');
         wp_enqueue_style('phlow_shortcode', $this->_plugin_url .'/css/mce-button.css' );
-        wp_enqueue_style('phlow', $this->_plugin_url .'/css/autocomplete/easy-autocomplete.min.css');
-        wp_enqueue_script( 'ph_jquery_script', 'http://code.jquery.com/jquery-1.12.2.min.js', null, false);
-        wp_register_script( 'ph_script', $this->_plugin_url .'/js/tipped/tipped.js',array('jquery'), null, false);
-        wp_enqueue_script( 'ph_script');
+        wp_enqueue_style('phlow_autocomplete', $this->_plugin_url .'/css/autocomplete/easy-autocomplete.min.css');
+        wp_enqueue_style('phlow', $this->_plugin_url .'/css/phlow.css');
+
+        // scripts
+        wp_enqueue_script('ph_jquery_script', 'http://code.jquery.com/jquery-1.12.2.min.js', null, false);
+        wp_register_script('ph_script', $this->_plugin_url .'/js/tipped/tipped.js', array('jquery'), null, false);
+        wp_enqueue_script('ph_script');
         wp_register_script('phlow', $this->_plugin_url . '/js/generator.js', array('jquery'), null, false);
         wp_enqueue_script('phlow');
         wp_register_script('phlow_autocomplete', $this->_plugin_url . '/js/autocomplete/jquery.easy-autocomplete.min.js', array('jquery'), null, false);
         wp_enqueue_script('phlow_autocomplete');
 
+		// js variables
 		wp_localize_script('phlow', 'phlowAjax', array(
 			'url' => $this->ajax_url
 		));
@@ -683,7 +688,7 @@ class phlow {
 		$checked_violence = ($violence == '1') ? 'checked' : '';
 
 		// source html
-		$source_html = '<select name="source" id="phlow_source">';
+		$source_html = '<select name="source" id="phlow_source" class="form-control">';
 
 		foreach ($data['source_options'] as $key => $value) {
 			$selected = ($source == $key) ? 'selected' : '';
@@ -693,7 +698,7 @@ class phlow {
 		$source_html .= '</select>';
 
 		// types html
-		$type_html = '<select name="type" id="phlow_type">';
+		$type_html = '<select name="type" id="phlow_type" class="form-control">';
 
 		foreach ($data['type_options'] as $key => $value) {
 			$selected = ($type == $key) ? 'selected' : '';
@@ -807,7 +812,7 @@ class phlow {
 					<p class="post-attributes-label-wrapper">
 						<label>' . __('Select one of your magazines') . '</label>
 					</p>
-					<select name="mymagazine">' . $options . '</select>
+					<select name="mymagazine" class="form-control">' . $options . '</select>
 				</p>
 			';
 		}
@@ -823,8 +828,19 @@ class phlow {
 					<p class="post-attributes-label-wrapper">
 						<label>' . __('Search for a public magazine') . '</label>
 					</p>
-					<input name="magazine_name" id="phlow_magazine_name" type="text" value="' . $name . '" />
-					<input name="magazine_id" id="phlow_magazine_id" type="hidden" value="' . $id . '" />
+					<input
+						name="magazine_name"
+						id="phlow_magazine_name"
+						class="form-control"
+						type="text"
+						value="' . $name . '"
+					/>
+					<input
+						name="magazine_id"
+						id="phlow_magazine_id"
+						type="hidden"
+						value="' . $id . '"
+					/>
 				</p>
 			';
 		}
@@ -840,8 +856,19 @@ class phlow {
 					<p class="post-attributes-label-wrapper">
 						<label>' . __('Search for a moment') . '</label>
 					</p>
-					<input name="moment_name" id="phlow_moment_name" type="text" value="' . $name . '" />
-					<input name="moment_id" id="phlow_moment_id" type="hidden" value="' . $id . '" />
+					<input
+						name="moment_name"
+						id="phlow_moment_name"
+						 class="form-control"
+						type="text"
+						value="' . $name . '"
+					/>
+					<input
+						name="moment_id"
+						id="phlow_moment_id"
+						type="hidden"
+						value="' . $id . '"
+					/>
 				</p>
 			';
 		}
@@ -854,7 +881,12 @@ class phlow {
 					<p class="post-attributes-label-wrapper">
 						<label>' . __('Comma separated streams') . '</label>
 					</p>
-					<input name="tags" type="text" value="' . $tags . '" />
+					<input
+						name="tags"
+						type="text"
+						class="form-control"
+						value="' . $tags . '"
+					/>
 				</p>
 			';
 		}
