@@ -3,9 +3,6 @@
 <head>
 	<meta charset="UTF-8" />
 	<title>Test</title>
-	<link href="/wp-content/plugins/Wordpress/css/autocomplete/easy-autocomplete.min.css" rel="stylesheet" />
-	<link href="/wp-content/plugins/Wordpress/mce_plugin/css/pure-min.css" rel="stylesheet" />
-	<link href="/wp-content/plugins/Wordpress/mce_plugin/css/dialog.css" rel="stylesheet" />
 </head>
 
 <body style="margin: 16px;">
@@ -120,8 +117,38 @@
 	</script>
 
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-	<script src="/wp-content/plugins/Wordpress/js/autocomplete/jquery.easy-autocomplete.min.js"></script>
-	<script src="/wp-content/plugins/Wordpress/mce_plugin/js/tmpl.min.js"></script>
-	<script src="/wp-content/plugins/Wordpress/mce_plugin/js/dialog.js"></script>
+
+	<script>
+		(function($) {
+			var wmParams = top.tinymce.activeEditor.windowManager.getParams();
+
+			// Loading CSS
+			var styles = [
+				'css/autocomplete/easy-autocomplete.min.css',
+				'mce_plugin/css/pure-min.css',
+				'mce_plugin/css/dialog.css'
+			];
+
+			styles.forEach(function(path) {
+				var link = $('<link>').prop({
+					href: wmParams.url + path,
+					rel: 'stylesheet'
+				});
+
+				$('head').append(link);
+			});
+
+			// Loading JS
+			var scripts = [
+				'js/autocomplete/jquery.easy-autocomplete.min.js',
+				'mce_plugin/js/tmpl.min.js',
+				'mce_plugin/js/dialog.js'
+			];
+
+			scripts.forEach(function(path) {
+				$.getScript(wmParams.url + path);
+			});
+		})(jQuery);
+	</script>
 </body>
 </html>
