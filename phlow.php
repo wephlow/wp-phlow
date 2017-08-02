@@ -16,6 +16,7 @@ class phlow {
 	public static $activation_transient;
 	public static $plugin_folder = 'phlow';
 	public $shortcode_tag = 'phlow_stream';
+	private $seen='';
 
 	public function __construct() {
 		$this->addActions();
@@ -44,7 +45,51 @@ class phlow {
 		add_action('wp_ajax_phlow_magazines_get', array($this, 'phlow_ajax_get_magazines'));
 		add_action('wp_ajax_phlow_magazines_search', array($this, 'phlow_ajax_search_magazines'));
 		add_action('wp_ajax_phlow_moments_search', array($this, 'phlow_ajax_search_moments'));
+        add_action('wp_ajax_manage_seen', array($this, 'manage_seen'));
+        add_action('wp_footer', array($this, 'my_action_javascript' ));
 	}
+
+    public function my_action_javascript() { ?>
+        <script type="text/javascript" >
+            jQuery(document).ready(function($) {
+
+                var data = {
+                    'action': 'manage_seen',
+                    'seen': '<?php echo $this->seen;?>'
+                };
+
+                var ajax_url = "<?php echo admin_url('admin-ajax.php'); ?>";
+
+                // since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php
+                jQuery.post(ajax_url, data, function(response) {
+                });
+            });
+        </script> <?php
+    }
+
+    public function manage_seen(){
+        $seen = $_POST['seen'];
+
+        if (isset($seen) && $seen != ''){
+            $singleSeens = explode("*", $seen);
+
+            if (isset($singleSeens) && sizeof($singleSeens)>0){
+                foreach ($singleSeens as $singleSeen){
+                    if ($singleSeen != ''){
+                        list($photoId, $stream, $magazine, $moment) = explode(";", $singleSeen);
+
+                        if ($stream=='') $stream = null;
+                        if ($magazine=='') $magazine = null;
+                        if ($moment=='') $moment = null;
+
+                        $this->api->seen($photoId, $stream, $magazine, $moment);
+                    }
+                }
+            }
+        }
+
+        wp_die(); // this is required to terminate immediately and return a proper response
+    }
 
     public function addShortcodes()
     {
@@ -58,6 +103,17 @@ class phlow {
 	public function phlow_localize() {
         // Localization
 		load_plugin_textdomain('phlow', false, dirname(plugin_basename(__FILE__)). "/languages" );
+
+        if (!isset($_COOKIE['phlow_sessionPrivateKey'])) {
+            $return = $this->api->generateGuestUser();
+
+            $this->api->setKeys($return->privateKey, $return->publicKey);
+
+            setcookie("phlow_sessionPrivateKey",$return->privateKey,time()+60*60*24*30, '/');
+            setcookie("phlow_sessionPublicKey",$return->publicKey,time()+60*60*24*30, '/');
+        } else {
+            $this->api->setKeys($_COOKIE['phlow_sessionPrivateKey'], $_COOKIE['phlow_sessionPublicKey']);
+        }
     }
 
     public function enqueue() {
@@ -111,6 +167,8 @@ class phlow {
 					'src' => $photo->url
 				);
 
+				$this->seen .= $photo->photoId.';;'.$context.';*';
+
 				if ($counter++ >= ($limit-1)) {
 					break;
 				}
@@ -125,6 +183,8 @@ class phlow {
 					'url' => 'https://app.phlow.com/moment/' . $context,
 					'src' => $photo->url
 				);
+
+                $this->seen .= $photo->photoId.';;;'.$context.'*';
 
 				if ($counter++ >= ($limit-1)) {
 					break;
@@ -141,6 +201,8 @@ class phlow {
 					'url' => 'https://app.phlow.com/stream/' . $context . '/photo/' . $photo->photoId,
 					'src' => $photo->url
 				);
+
+                $this->seen .= $photo->photoId.';'.$context.';;*';
 
 				if ($counter++ >= ($limit-1)) {
 					break;
