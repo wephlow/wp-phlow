@@ -2,7 +2,7 @@
 /**
  * Plugin Name: phlow
  * Description: phlow allows you to embed a carousel of photographs relevant to a specific theme or context. Be it #wedding#gowns, #portraits#blackandwhite or #yoga, phlow provides you with images that are fresh and relevant. To get started, log through a phlow account (it is 100% free) and either embed the stream in your WYSIWYG editor or add a widget to your blog.
- * Version: 1.1.2
+ * Version: 1.1.3
  * Author: phlow
  * Author URI: http://phlow.com
  */
@@ -125,7 +125,7 @@ class phlow {
         wp_enqueue_style('phlow', $this->_plugin_url .'/css/phlow.css');
 
         // scripts
-        wp_enqueue_script('ph_jquery_script', 'http://code.jquery.com/jquery-1.12.2.min.js', null, false);
+        wp_enqueue_script('ph_jquery_script', 'http' . ($_SERVER['SERVER_PORT'] == 443 ? 's' : '') . '://code.jquery.com/jquery-1.12.2.min.js', null, false);
         wp_register_script('ph_script', $this->_plugin_url .'/js/tipped/tipped.js', array('jquery'), null, false);
         wp_enqueue_script('ph_script');
         wp_register_script('phlow', $this->_plugin_url . '/js/generator.js', array('jquery'), null, false);
