@@ -13,7 +13,7 @@ i.mce-i-bs3_panel:before {
     display: inline-block;
     float: left;
     height: auto;
-    width: 33.333%;
+    width: 30%;
     padding: 3px !important;
     margin: 0;
     border: 0 !important;
@@ -66,7 +66,7 @@ span.phlow-red{
     }
     .image-list ul.groups-images li {
         height: 100%;
-        width: 33.333%;
+        width: 30%;
         line-height: 100%;
     }
 }

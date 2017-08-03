@@ -2,7 +2,7 @@
 /**
  * Plugin Name: phlow
  * Description: phlow allows you to embed a carousel of photographs relevant to a specific theme or context. Be it #wedding#gowns, #portraits#blackandwhite or #yoga, phlow provides you with images that are fresh and relevant. To get started, log through a phlow account (it is 100% free) and either embed the stream in your WYSIWYG editor or add a widget to your blog.
- * Version: 1.1
+ * Version: 1.1.1
  * Author: phlow
  * Author URI: http://phlow.com
  */
@@ -193,8 +193,8 @@ class phlow {
 		}
 		// streams
 		else {
-			$queryString = 'context=' . $context . '&' . $queryString;
-			$photos = $this->api->streams($queryString)->photos;
+		    $queryString = 'context=' . $context . '&' . $queryString;
+		    $photos = $this->api->streams($queryString)->photos;
 
 			foreach ($photos as $photo) {
 				$images[] = array(
@@ -347,9 +347,9 @@ class phlow {
 		else {
 			$src_val = 'streams';
             if ( $type != 2 ) {
-                $context = str_replace('-', ',', trim($query['tags']));
-            } else {
                 $context = str_replace(',', '-', trim($query['tags']));
+            } else {
+                $context = str_replace('-', ',', trim($query['tags']));
             }
 			$context = str_replace(' ', '', $context);
 			$context = str_replace('#', '', $context);
