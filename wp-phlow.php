@@ -144,6 +144,32 @@ class phlow {
 		));
     }
 
+    private function generatePoweredByMessage($atts){
+        $source = $atts['source'];
+        $context = $atts['context'];
+
+        $returnValue = ' powered by ';
+
+        switch (strtolower($source)){
+            case 'magazine':
+                $returnValue = 'Magazine ' .$returnValue;
+                break;
+            case 'moment':
+                $returnValue = 'Moment ' .$returnValue;
+                break;
+            default:
+                $returnContext = '';
+                $contexts = explode(',', $context);
+                foreach ($contexts as $singleContext){
+                    $returnContext = '#'.$singleContext . ' ';
+                }
+                $returnValue = $returnContext.$returnValue;
+                break;
+        }
+
+        return $returnValue;
+    }
+
     /**
      * Load images
      * make sure that the request for the images contains ?size=150x150c
@@ -234,12 +260,14 @@ class phlow {
 			';
 		}
 
+		$poweredBy = $this->generatePoweredByMessage($atts);
+
     	echo '
     		<div class="image-list">
 				<ul class="groups-images">
 					' . $images_html . '
 					<div class="powered-by">
-						<span class="first-child">' . __('Powered by') . '</span>
+						<span class="first-child">' . __($poweredBy) . '</span>
 						<span> </span>
 						<a class="plugin-url" target="_blank" href="https://app.phlow.com">
 							<span class="phlow-red">phlow</span>
@@ -273,12 +301,14 @@ class phlow {
 				';
 			}
 
+            $poweredBy = $this->generatePoweredByMessage($atts);
+
 			echo '
 				<div class="image-list-horizontal">
 					<ul class="line-images">
 						' . $images_html . '
 						<div class="powered-by">
-							<span class="first-child">' . __('Powered by') . '</span>
+							<span class="first-child">' . __($poweredBy) . '</span>
 							<span> </span>
 							<a class="plugin-url" target="_blank" href="https://app.phlow.com">
 								<span class="phlow-red">phlow</span>
