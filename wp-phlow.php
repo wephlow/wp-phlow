@@ -48,12 +48,14 @@ class phlow {
 		add_action('wp_ajax_phlow_magazines_get', array($this, 'phlow_ajax_get_magazines'));
 		add_action('wp_ajax_phlow_magazines_search', array($this, 'phlow_ajax_search_magazines'));
 		add_action('wp_ajax_phlow_moments_search', array($this, 'phlow_ajax_search_moments'));
+        add_action('wp_ajax_nopriv_phlow_images_get', array($this, 'phlow_ajax_get_images'));
+        add_action('wp_ajax_phlow_images_get', array($this, 'phlow_ajax_get_images'));
         add_action('wp_ajax_nopriv_manage_seen', array($this, 'manage_seen'));
-        add_action('wp_head', array($this, 'my_action_javascript' ));
+        // add_action('wp_head', array($this, 'my_action_javascript' ));
 	}
 
     public function my_action_javascript() { ?>
-        <script type="text/javascript" >
+        <script type="text/javascript">
             //TODO move the SEEN call from document ready to waypoint for each phlow_line or phlow_group!
             jQuery(document).ready(function($) {
 
@@ -143,6 +145,8 @@ class phlow {
         wp_enqueue_script('phlow_autocomplete');
         wp_register_script('phlow_clipboard', $this->_plugin_url . '/js/clipboard.min.js', array(), null, false);
         wp_enqueue_script('phlow_clipboard');
+        wp_register_script('phlow_loader', $this->_plugin_url . '/js/loader.js', array('jquery'), null, false);
+        wp_enqueue_script('phlow_loader');
 
 		// js variables
 		wp_localize_script('phlow', 'phlowAjax', array(
@@ -256,41 +260,37 @@ class phlow {
 
     // phlow group widget
     public function shortcode_groups_image($atts) {
-    	$imageList = $this->phlowLoadImages($atts, 9);
+		ob_start();
 
-    	ob_start();
+    	$poweredBy = $this->generatePoweredByMessage($atts);
+    	$microtime = microtime().'-'.rand(1, 100);
 
-    	$images_html = '';
+    	$dataParams = array(
+    		'data-type=group',
+    		'data-source=' . $atts['source'],
+			'data-context=' . $atts['context'],
+			// 'data-clean=' . $atts['clean'],
+			'data-nudity=' . $atts['nudity'],
+			'data-violence=' . $atts['violence'],
+			'data-owned=' . $atts['owned']
+    	);
 
-    	foreach ($imageList as $image) {
-			$images_html .= '
-				<li>
-					<a target="_blank"href="' . $image['url'] . '">
-						<img class="images-view" src="' . $image['src'] . '" />
-					</a>
-				</li>
-			';
-		}
+    	$dataParams = join(' ', $dataParams);
 
-		$poweredBy = $this->generatePoweredByMessage($atts);
-
-        $microtime = microtime().'-'.rand(1, 100);
-
-        echo '
-    		<div class="image-list" id="phlow-'.$microtime.'">
-				<ul class="groups-images">
-					' . $images_html . '
-					<div class="powered-by">
-						<span class="first-child">' . __($poweredBy) . '</span>
-						<span> </span>
-						<a class="plugin-url" target="_blank" href="https://app.phlow.com">
-							<span class="phlow-red">phlow</span>
-							<span> </span>
-							<i class="icon-logo-small"></i>
-						</a>
-					</div>
-				</ul>
-    		</div>
+    	echo '
+    	<div class="image-list" id="phlow-' . $microtime . '" ' . $dataParams . '>
+    		<ul class="groups-images">
+	    		<div class="powered-by">
+	    			<span class="first-child">' . __($poweredBy) . '</span>
+	    			<span> </span>
+	    			<a class="plugin-url" target="_blank" href="https://app.phlow.com">
+	    				<span class="phlow-red">phlow</span>
+	    				<span> </span>
+	    				<i class="icon-logo-small"></i>
+	    			</a>
+	    		</div>
+    		</ul>
+    	</div>
     	';
 
     	return ob_get_clean();
@@ -298,44 +298,38 @@ class phlow {
 
 	// phlow line widget
 	public function shortcode_line_images($atts) {
-		$imageList = $this->phlowLoadImages($atts);
-
 		ob_start();
 
-		if (isset($imageList) && sizeof($imageList) > 0) {
-			$images_html = '';
+		$poweredBy = $this->generatePoweredByMessage($atts);
+		$microtime = rand(1, 10000);
 
-			foreach ($imageList as $image) {
-				$images_html .= '
-					<li>
-						<a target="_blank "href="' . $image['url'] . '">
-							<img class="images-view" src="' . $image['src'] . '" />
-						</a>
-					</li>
-				';
-			}
+		$dataParams = array(
+    		'data-type=line',
+    		'data-source=' . $atts['source'],
+			'data-context=' . $atts['context'],
+			// 'data-clean=' . $atts['clean'],
+			'data-nudity=' . $atts['nudity'],
+			'data-violence=' . $atts['violence'],
+			'data-owned=' . $atts['owned']
+    	);
 
-            $poweredBy = $this->generatePoweredByMessage($atts);
+    	$dataParams = join(' ', $dataParams);
 
-			$microtime = rand(1, 10000);
-
-			echo '
-				<div class="image-list-horizontal phlows" id="phlow'.$microtime.'">
-					<ul class="line-images">
-						' . $images_html . '
-						<div class="powered-by">
-							<span class="first-child">' . __($poweredBy) . '</span>
-							<span> </span>
-							<a class="plugin-url" target="_blank" href="https://app.phlow.com">
-								<span class="phlow-red">phlow</span>
-								<span> </span>
-								<i class="icon-logo-small"></i>
-							</a>
-						</div>
-					</ul>
+    	echo '
+		<div class="image-list-horizontal phlows" id="phlow' . $microtime . '" ' . $dataParams . '>
+			<ul class="line-images">
+				<div class="powered-by">
+					<span class="first-child">' . __($poweredBy) . '</span>
+					<span> </span>
+					<a class="plugin-url" target="_blank" href="https://app.phlow.com">
+						<span class="phlow-red">phlow</span>
+						<span> </span>
+						<i class="icon-logo-small"></i>
+					</a>
 				</div>
-			';
-		}
+			</ul>
+		</div>
+		';
 
 		return ob_get_clean();
 	}
@@ -1162,6 +1156,93 @@ class phlow {
 
         echo json_encode($data);
         wp_die();
+	}
+
+	public function phlow_ajax_get_images() {
+		$this->query = $_GET;
+
+		$errors = array();
+
+		// Validate type
+		if (isset($this->query['type'])) {
+			$type = trim($this->query['type']);
+
+			if ($type != 'group' && $type != 'line') {
+				$errors[] = __('Invalid type parameter');
+			}
+		}
+		else {
+			$errors[] = __('Please provide type parameter');
+		}
+
+		// Validate source
+		if (isset($this->query['source'])) {
+			$source = trim($this->query['source']);
+
+			if ($source != 'streams' && $source != 'magazine') {
+				$errors[] = __('Invalid source parameter');
+			}
+		}
+		else {
+			$errors[] = __('Please provide source parameter');
+		}
+
+		// Validate context
+		if (isset($this->query['context'])) {
+			$context = trim($this->query['context']);
+			$context = preg_replace('/[^0-9a-zA-Z,:]/', '', $context);
+		}
+		else {
+			$errors[] = __('Please provide context parameter');
+		}
+
+		// Validate violence
+		if (isset($this->query['violence'])) {
+			$violence = intval($this->query['violence']) ? 1 : 0;
+		}
+		else {
+			$errors[] = __('Please provide violence parameter');
+		}
+
+		// Validate nudity
+		if (isset($this->query['nudity'])) {
+			$nudity = intval($this->query['nudity']) ? 1 : 0;
+		}
+		else {
+			$errors[] = __('Please provide nudity parameter');
+		}
+
+		// Validate owned
+		if (isset($this->query['owned'])) {
+			$owned = intval($this->query['owned']) ? 1 : 0;
+		}
+		else {
+			$errors[] = __('Please provide owned parameter');
+		}
+
+		// Check errors
+		if (count($errors)) {
+			$response = array(
+				'success' => false,
+				'errors' => $errors
+			);
+		}
+		else {
+			if ($type == 'group') {
+				$images = $this->phlowLoadImages($this->query, 9);
+			}
+			if ($type == 'line') {
+				$images = $this->phlowLoadImages($this->query);
+			}
+
+			$response = array(
+				'success' => true,
+				'data' => $images
+			);
+		}
+
+		echo json_encode($response);
+		wp_die();
 	}
 
 	public function admin_head() {

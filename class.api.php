@@ -148,6 +148,7 @@ class api {
 	        $user = $this->signedRequest('GET', '/users/me');
 	        $queryString .= '&user='.$user->userId;
         }
+        
 		return $this->signedRequest('GET', '/streams?' . $queryString, null, true, true, true);
 	}
 
