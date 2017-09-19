@@ -164,18 +164,22 @@ class api {
         return $this->signedRequest('POST', '/users/guest', null, false, false);
     }
 
-	public function seen($photoId, $stream = null, $magazine = null, $moment = null){
+	public function seen($photoId, $stream = null, $magazine = null, $moment = null) {
         /** add caller page */
+        $queryParams = array();
+
+        if (isset($stream)) {
+            $queryParams[] = 'context=' . $stream;
+        }
+        if (isset($magazine)) {
+            $queryParams[] = 'magazineId=' . $magazine;
+        }
+        if (isset($moment)) {
+            $queryParams[] = 'eventId=' . $moment;
+        }
+
         $endpoint = '/photos/' . $photoId . '/activity/seen/?';
-        if (isset($stream)){
-            $endpoint .= 'context='.$stream;
-        }
-        if (isset($magazine)){
-            $endpoint .= 'magazineId='.$magazine;
-        }
-        if (isset($moment)){
-            $endpoint .= 'eventId='.$moment;
-        }
+        $endpoint .= implode('&', $queryParams);
 
         return $this->signedRequest('POST', $endpoint, null, true, true, true, true);
     }

@@ -17,7 +17,7 @@ class phlow {
 	public static $activation_transient;
 	public static $plugin_folder = 'wp-phlow';
 	public $shortcode_tag = 'phlow_stream';
-	private $seen='';
+	// private $seen='';
 
 	public function __construct() {
 		$this->addActions();
@@ -50,7 +50,9 @@ class phlow {
 		add_action('wp_ajax_phlow_moments_search', array($this, 'phlow_ajax_search_moments'));
         add_action('wp_ajax_nopriv_phlow_images_get', array($this, 'phlow_ajax_get_images'));
         add_action('wp_ajax_phlow_images_get', array($this, 'phlow_ajax_get_images'));
-        add_action('wp_ajax_nopriv_manage_seen', array($this, 'manage_seen'));
+        add_action('wp_ajax_nopriv_phlow_photo_seen', array($this, 'phlow_ajax_photo_seen'));
+        add_action('wp_ajax_phlow_photo_seen', array($this, 'phlow_ajax_photo_seen'));
+        // add_action('wp_ajax_nopriv_manage_seen', array($this, 'manage_seen'));
         // add_action('wp_head', array($this, 'my_action_javascript' ));
 	}
 
@@ -145,6 +147,8 @@ class phlow {
         wp_enqueue_script('phlow_autocomplete');
         wp_register_script('phlow_clipboard', $this->_plugin_url . '/js/clipboard.min.js', array(), null, false);
         wp_enqueue_script('phlow_clipboard');
+        wp_register_script('phlow_visible', $this->_plugin_url . '/js/jquery-visible/jquery.visible.min.js', array('jquery'), null, false);
+        wp_enqueue_script('phlow_visible');
         wp_register_script('phlow_loader', $this->_plugin_url . '/js/loader.js', array('jquery'), null, false);
         wp_enqueue_script('phlow_loader');
 
@@ -203,11 +207,12 @@ class phlow {
 
 			foreach ($photos as $photo) {
 				$images[] = array(
+					'id' => $photo->photoId,
 					'url' => 'https://app.phlow.com/magazine/' . $context,
 					'src' => $photo->url
 				);
 
-				$this->seen .= $photo->photoId.';;'.$context.';*';
+				// $this->seen .= $photo->photoId.';;'.$context.';*';
 
 				if ($counter++ >= ($limit-1)) {
 					break;
@@ -220,11 +225,12 @@ class phlow {
 
 			foreach ($photos as $photo) {
 				$images[] = array(
+					'id' => $photo->photoId,
 					'url' => 'https://app.phlow.com/moment/' . $context,
 					'src' => $photo->url
 				);
 
-                $this->seen .= $photo->photoId.';;;'.$context.'*';
+                // $this->seen .= $photo->photoId.';;;'.$context.'*';
 
 				if ($counter++ >= ($limit-1)) {
 					break;
@@ -242,11 +248,12 @@ class phlow {
 		    if (isset($photos) && sizeof($photos)>0) {
                 foreach ($photos as $photo) {
                     $images[] = array(
+                    	'id' => $photo->photoId,
                         'url' => 'https://app.phlow.com/stream/' . $context . '/photo/' . $photo->photoId,
                         'src' => $photo->url
                     );
 
-                    $this->seen .= $photo->photoId . ';' . $context . ';;*';
+                    // $this->seen .= $photo->photoId . ';' . $context . ';;*';
 
                     if ($counter++ >= ($limit - 1)) {
                         break;
@@ -791,7 +798,7 @@ class phlow {
 				</p>
 			</form>
 			<script type="text/javascript">
-				$(document).ready(function() {
+				jQuery(document).ready(function() {
 					Tipped.create(".box");
 				});
 			</script>
@@ -937,7 +944,7 @@ class phlow {
 			</form>
 			' . $shortcode_html . '
 			<script type="text/javascript">
-				$(document).ready(function() {
+				jQuery(document).ready(function() {
 					Tipped.create(".box");
 				});
 			</script>
@@ -1160,7 +1167,6 @@ class phlow {
 
 	public function phlow_ajax_get_images() {
 		$this->query = $_GET;
-
 		$errors = array();
 
 		// Validate type
@@ -1179,7 +1185,7 @@ class phlow {
 		if (isset($this->query['source'])) {
 			$source = trim($this->query['source']);
 
-			if ($source != 'streams' && $source != 'magazine') {
+			if ($source != 'streams' && $source != 'magazine' && $source != 'moment') {
 				$errors[] = __('Invalid source parameter');
 			}
 		}
@@ -1238,6 +1244,67 @@ class phlow {
 			$response = array(
 				'success' => true,
 				'data' => $images
+			);
+		}
+
+		echo json_encode($response);
+		wp_die();
+	}
+
+	public function phlow_ajax_photo_seen() {
+		$this->query = $_POST;
+		$errors = array();
+
+		// Validate photoId
+		if (isset($this->query['photoId'])) {
+			$photoId = trim($this->query['photoId']);
+			$photoId = preg_replace('/[^0-9a-zA-Z]/', '', $photoId);
+		}
+		else {
+			$errors[] = __('Please provide photo id parameter');
+		}
+
+		// Validate source
+		if (isset($this->query['source'])) {
+			$source = trim($this->query['source']);
+
+			if ($source != 'streams' && $source != 'magazine' && $source != 'moment') {
+				$errors[] = __('Invalid source parameter');
+			}
+		}
+		else {
+			$errors[] = __('Please provide source parameter');
+		}
+
+		// Validate context
+		if (isset($this->query['context'])) {
+			$context = trim($this->query['context']);
+			$context = preg_replace('/[^0-9a-zA-Z,:]/', '', $context);
+		}
+		else {
+			$errors[] = __('Please provide context parameter');
+		}
+
+		// Check errors
+		if (count($errors)) {
+			$response = array(
+				'success' => false,
+				'errors' => $errors
+			);
+		}
+		else {
+			if ($source == 'streams') {
+				$this->api->seen($photoId, $context, null, null);
+			}
+			else if ($source == 'magazine') {
+				$this->api->seen($photoId, null, $context, null);
+			}
+			else if ($source == 'moment') {
+				$this->api->seen($photoId, null, null, $context);
+			}
+
+			$response = array(
+				'success' => true
 			);
 		}
 
