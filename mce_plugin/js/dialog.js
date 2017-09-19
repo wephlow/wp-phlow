@@ -12,6 +12,7 @@
     	typeSelect = $('#phlow_type'),
     	nudityCheckbox = $('#phlow_nudity'),
     	violenceCheckbox = $('#phlow_violence'),
+        ownedCheckbox =  $('#phlow_owned'),
     	sourceBox = $('#phlow_source_box'),
     	typeBox = $('#phlow_type_box'),
     	submitButton = $('#phlow_submit'),
@@ -255,8 +256,11 @@
 		var data = storage.shortcode,
 			nudity = data.nudity,
 			violence = data.violence,
+            owned = data.owned,
 			context = data.context.trim(),
 			source, type, width, height;
+
+		alert(JSON.stringify(data));
 
 		if (data.source == 1 || data.source == 2) {
 			source = 'magazine';
@@ -266,7 +270,11 @@
 		}
 		else {
 			source = 'streams';
-			context = context.replace(',', '-');
+			if (data.type == 2){
+                context = context.replace(',', '-');
+			} else {
+                context = context.replace('-', ',');
+			}
 			context = context.replace(' ', '');
 			context = context.replace('#', '');
 		}
@@ -291,6 +299,7 @@
 		parts.push('context="' + context + '"');
 		parts.push('nudity="' + nudity + '"');
 		parts.push('violence="' + violence + '"');
+		parts.push('owned="' + owned + '"');
 
 		if (width) {
 			parts.push('width="' + width + '"');
@@ -340,6 +349,10 @@
 	    	violenceCheckbox.prop('checked', violence);
 	    	setShortcodeData('violence', violence);
 
+            var owned = Number(wmParams.owned);
+            ownedCheckbox.prop('checked', owned);
+            setShortcodeData('owned', owned);
+
 	    	var type = typeSelect.val();
 	    	typeHandler.call({ value: type });
 
@@ -349,6 +362,18 @@
 	    	// select handlers
 	    	sourceSelect.on('change', sourceHandler);
 	    	typeSelect.on('change', typeHandler);
+
+	    	ownedCheckbox.on('change', function(){
+                setShortcodeData('owned', (this.checked) ? 1 : 0);
+			});
+
+            violenceCheckbox.on('change', function(){
+                setShortcodeData('violence', (this.checked) ? 1 : 0);
+            });
+
+            nudityCheckbox.on('change', function(){
+                setShortcodeData('nudity', (this.checked) ? 1 : 0);
+            });
 
 	    	// button handler
 	    	submitButton.on('click', submitHandler);

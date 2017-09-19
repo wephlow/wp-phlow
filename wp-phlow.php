@@ -2,7 +2,7 @@
 /**
  * Plugin Name: wp-phlow
  * Description: phlow allows you to embed a carousel or a widget of photographs relevant to a specific theme or context. Be it #wedding#gowns, #portraits#blackandwhite or #yoga, phlow provides you with images that are fresh and relevant. To get started, log through a phlow account (it is 100% free) and either embed the stream in your WYSIWYG editor or add a widget to your blog.
- * Version: 1.3.0
+ * Version: 1.3.1
  * Author: phlow
  * Author URI: http://phlow.com
  */
@@ -49,11 +49,12 @@ class phlow {
 		add_action('wp_ajax_phlow_magazines_search', array($this, 'phlow_ajax_search_magazines'));
 		add_action('wp_ajax_phlow_moments_search', array($this, 'phlow_ajax_search_moments'));
         add_action('wp_ajax_nopriv_manage_seen', array($this, 'manage_seen'));
-        add_action('wp_footer', array($this, 'my_action_javascript' ));
+        add_action('wp_head', array($this, 'my_action_javascript' ));
 	}
 
     public function my_action_javascript() { ?>
-        <script type="text/javascript" >
+        <script type="text/javascript" >
+            //TODO move the SEEN call from document ready to waypoint for each phlow_line or phlow_group!
             jQuery(document).ready(function($) {
 
                 var data = {
@@ -131,6 +132,11 @@ class phlow {
         //wp_enqueue_script('ph_jquery_script', 'http' . ($_SERVER['SERVER_PORT'] == 443 ? 's' : '') . '://code.jquery.com/jquery-1.12.2.min.js', null, false);
         wp_register_script('ph_script', $this->_plugin_url .'/js/tipped/tipped.js', array('jquery'), null, false);
         wp_enqueue_script('ph_script');
+
+        //TODO Make Waypoint work!
+        //wp_register_script('ph_waypoint', $this->_plugin_url .'/js/waypoint.js', array('jquery'), null, false);
+        //wp_enqueue_script('ph_waypoint');
+
         wp_register_script('phlow', $this->_plugin_url . '/js/generator.js', array('jquery'), null, false);
         wp_enqueue_script('phlow');
         wp_register_script('phlow_autocomplete', $this->_plugin_url . '/js/autocomplete/jquery.easy-autocomplete.min.js', array('jquery'), null, false);
@@ -180,6 +186,7 @@ class phlow {
 		$clean = $atts['clean'];
 		$nudity = $atts['nudity'];
 		$violence = $atts['violence'];
+		$owned = $atts['owned'];
 
 		$images = array();
 		$counter = 0;
@@ -223,20 +230,25 @@ class phlow {
 		// streams
 		else {
 		    $queryString = 'context=' . $context . '&' . $queryString;
-		    $photos = $this->api->streams($queryString)->photos;
 
-			foreach ($photos as $photo) {
-				$images[] = array(
-					'url' => 'https://app.phlow.com/stream/' . $context . '/photo/' . $photo->photoId,
-					'src' => $photo->url
-				);
+            $owned = (isset($owned) && $owned==1) ? true : false;
 
-                $this->seen .= $photo->photoId.';'.$context.';;*';
+		    $photos = $this->api->streams($queryString, $owned)->photos;
 
-				if ($counter++ >= ($limit-1)) {
-					break;
-				}
-			}
+		    if (isset($photos) && sizeof($photos)>0) {
+                foreach ($photos as $photo) {
+                    $images[] = array(
+                        'url' => 'https://app.phlow.com/stream/' . $context . '/photo/' . $photo->photoId,
+                        'src' => $photo->url
+                    );
+
+                    $this->seen .= $photo->photoId . ';' . $context . ';;*';
+
+                    if ($counter++ >= ($limit - 1)) {
+                        break;
+                    }
+                }
+            }
 		}
 
 		return $images;
@@ -262,8 +274,10 @@ class phlow {
 
 		$poweredBy = $this->generatePoweredByMessage($atts);
 
-    	echo '
-    		<div class="image-list">
+        $microtime = microtime().'-'.rand(1, 100);
+
+        echo '
+    		<div class="image-list" id="phlow-'.$microtime.'">
 				<ul class="groups-images">
 					' . $images_html . '
 					<div class="powered-by">
@@ -303,8 +317,10 @@ class phlow {
 
             $poweredBy = $this->generatePoweredByMessage($atts);
 
+			$microtime = rand(1, 10000);
+
 			echo '
-				<div class="image-list-horizontal">
+				<div class="image-list-horizontal phlows" id="phlow'.$microtime.'">
 					<ul class="line-images">
 						' . $images_html . '
 						<div class="powered-by">
@@ -333,6 +349,7 @@ class phlow {
 		$clean = $atts['clean'];
 		$nudity = $atts['nudity'];
 		$violence = $atts['violence'];
+        $owned = $atts['owned'];
 
 		$url = 'http://app.phlow.com';
 
@@ -349,6 +366,7 @@ class phlow {
 		$url .= '?cleanstream=' . $clean;
 		$url .= '&nudity=' . $nudity;
 		$url .= '&violence=' . $violence;
+		$url .= '&owned=' . $owned;
 
 		ob_start();
 		echo '<iframe src="' . $url . '" width="' . $width . '" height="' . $height . '" frameborder="0"></iframe>';
@@ -386,6 +404,8 @@ class phlow {
             }
 			$context = str_replace(' ', '', $context);
 			$context = str_replace('#', '', $context);
+
+            $owned = isset($query['owned']) ? 1 : 0;
 		}
 
 		if ($type == 1) {
@@ -412,6 +432,7 @@ class phlow {
 		$shortcode .= ' context="' . $context . '"';
 		$shortcode .= ' nudity="' . $nudity . '"';
 		$shortcode .= ' violence="' . $violence . '"';
+		if (isset($owned)) $shortcode .= ' owned="' . $owned . '"';
 
 		if (isset($width)) {
 			$shortcode .= ' width="' . $width . '"';
@@ -804,8 +825,13 @@ class phlow {
 			? get_option('violence')
 			: get_option('default_violence');
 
+        $owned = is_numeric(get_option('owned'))
+            ? get_option('owned')
+            : 0;
+
 		$checked_nudity = ($nudity == '1') ? 'checked' : '';
 		$checked_violence = ($violence == '1') ? 'checked' : '';
+		$checked_owned = ($owned == '1') ? 'checked' : '';
 
 		// source html
 		$source_html = '<select name="source" id="phlow_source" class="form-control">';
@@ -890,6 +916,18 @@ class phlow {
 							class="box"
 							data-tipped-options="position: top"
 							title="' . __('Activate this option to allow phlow to show images marked as containing violence') . '"
+							href="#"
+						>  ?</a>
+					</label>
+				</p>
+				<p>
+					<label>
+						<input type="checkbox" name="owned" ' . $checked_owned . ' />
+						' . __('Limit photos to your published ones') . '
+						<a
+							class="box"
+							data-tipped-options="position: top"
+							title="' . __('Activate this option to allow phlow to show only photos you published') . '"
 							href="#"
 						>  ?</a>
 					</label>
@@ -1138,7 +1176,8 @@ class phlow {
 				url: "' . $plugin_url . '",
 				ajax_url: "' . $this->ajax_url . '",
 				nudity: "' . $nudity . '",
-				violence: "' . $violence . '"
+				violence: "' . $violence . '",
+				owned: ""
 			};
 			</script>
 		';
@@ -1200,6 +1239,7 @@ class phlow_placer extends WP_Widget {
 		$tags = str_replace(' ', '', $tags);
 		$nudity = $instance['nudity'];
 		$violent = $instance['violent'];
+		$owned = $instance['owned'];
 		$clean = 0;
 		$width = 320;
 		$height = 640;
@@ -1208,7 +1248,7 @@ class phlow_placer extends WP_Widget {
 		if ( ! empty( $title ) )
 			echo $before_title . $title . $after_title;
         ?>
-        <iframe src="http://app.phlow.com/stream/<?php print $tags ; ?>?cleanstream=<?php print $clean ; ?>&nudity=<?php print $nudity ; ?>&violence=<?php print $violent ; ?>"width="320"height="640"frameborder="0"></iframe>
+        <iframe src="http://app.phlow.com/stream/<?php print $tags ; ?>?cleanstream=<?php print $clean ; ?>&nudity=<?php print $nudity ; ?>&violence=<?php print $violent ; ?>&owned=<?php print $owned ; ?>"width="320"height="640"frameborder="0"></iframe>
         <?php
 		echo $after_widget;
 	}
@@ -1225,12 +1265,14 @@ class phlow_placer extends WP_Widget {
 	function form($instance) {
 		$nude = get_option('nudity');
 		$vio = get_option('violence') ;
+		$owned = get_option('owned') ;
 
 		$default_settings = array(
       		'title' => 'phlow',
       		'tags' => '',
       		'nudity' => $nude,
-      		'violent' => $vio
+      		'violent' => $vio,
+            'owned' => $owned
       	);
 
     	$instance = wp_parse_args((array) $instance, $default_settings);
@@ -1256,6 +1298,10 @@ class phlow_placer extends WP_Widget {
 		<label for="<?php echo $this->get_field_id('violent') ?>"><?php _e( 'allow violent images' , 'wcw'); ?></label>
 		<input class="widefat" id="<?php echo $this->get_field_id('violent') ?>" name="<?php echo $this->get_field_name('violent') ?>" type="checkbox" <?php checked( $violent ); ?> />
 		</p>
+        <p>
+            <label for="<?php echo $this->get_field_id('owned') ?>"><?php _e( 'show only the photos you published' , 'wcw'); ?></label>
+            <input class="widefat" id="<?php echo $this->get_field_id('owned') ?>" name="<?php echo $this->get_field_name('owned') ?>" type="checkbox" <?php checked( $owned ); ?> />
+        </p>
 		<label for="<?php echo $this->get_field_id('streams') ?>"><?php _e( 'require clean streams' , 'wcw'); ?></label>
 		<input class="widefat" id="<?php echo $this->get_field_id('streams') ?>" name="<?php echo $this->get_field_name('violent') ?>" type="checkbox" value="" disabled />
 		</p>

@@ -68,7 +68,7 @@ class api {
 		return $clientKeys['publicKey'] . $sessionPublicKey . $time . $checksum;
 	}
 
-	private function signedRequest($method, $endpoint, $body=null, $isReader=false, $isUserSigned=true, $waitForResponse=true, $xPhlowGateway=null) {
+	private function signedRequest($method, $endpoint, $body=null, $isReader=false, $isUserSigned=true, $waitForResponse=true, $isAjaxPage=false) {
 		$uri = '/v1' . $endpoint;
 		$url = self::$apiUrl . $uri;
 		$time = $this->time();
@@ -78,14 +78,16 @@ class api {
             curl_setopt($curl, CURLOPT_POST, 1);
         }
 
+        $xPhlowGateway = $this->getPageURL($isAjaxPage);
+
         $httpHeaders = array();
-		$httpHeaders[] = 'X-PHLOW:' . $this->generateSignature($time, $method, $uri, $body, $isReader, $isUserSigned);
+        $httpHeaders[] = 'X-PHLOW:' . $this->generateSignature($time, $method, $uri, $body, $isReader, $isUserSigned);
 
         if (isset($xPhlowGateway)){
             $httpHeaders[] = 'X-PHLOW-GATEWAY:wordpress-embedded:'.$xPhlowGateway;
         }
 
-		curl_setopt_array($curl, array(
+        curl_setopt_array($curl, array(
 			CURLOPT_RETURNTRANSFER => 1,
 			CURLOPT_HTTPHEADER => $httpHeaders,
 			CURLOPT_URL => $url
@@ -141,19 +143,20 @@ class api {
 		return $this->signedRequest('GET', '/events/search?name=' . $string);
 	}
 
-	public function streams($queryString) {
-        /** add caller page */
-		return $this->signedRequest('GET', '/streams?' . $queryString, null, true, true, true, $this->getPageURL());
+	public function streams($queryString, $owned=false) {
+	    if ($owned){
+	        $user = $this->signedRequest('GET', '/users/me');
+	        $queryString .= '&user='.$user->userId;
+        }
+		return $this->signedRequest('GET', '/streams?' . $queryString, null, true, true, true);
 	}
 
 	public function magazines($magazineId, $queryString) {
-        /** add caller page */
-		return $this->signedRequest('GET', '/magazines/' . $magazineId . '?' . $queryString, null, true, true, true, $this->getPageURL());
+		return $this->signedRequest('GET', '/magazines/' . $magazineId . '?' . $queryString, null, true, true, true);
 	}
 
 	public function moments($momentId, $queryString) {
-        /** add caller page */
-		return $this->signedRequest('GET', '/events/' . $momentId . '?' . $queryString, null, true, true, true, $this->getPageURL());
+		return $this->signedRequest('GET', '/events/' . $momentId . '?' . $queryString, null, true, true, true);
 	}
 
 	public function generateGuestUser(){
@@ -173,6 +176,6 @@ class api {
             $endpoint .= 'eventId='.$moment;
         }
 
-        return $this->signedRequest('POST', $endpoint, null, true, true, true, $this->getPageURL(true));
+        return $this->signedRequest('POST', $endpoint, null, true, true, true, true);
     }
 }
