@@ -17,7 +17,6 @@ class phlow {
 	public static $activation_transient;
 	public static $plugin_folder = 'wp-phlow';
 	public $shortcode_tag = 'phlow_stream';
-	// private $seen='';
 
 	public function __construct() {
 		$this->addActions();
@@ -52,52 +51,7 @@ class phlow {
         add_action('wp_ajax_phlow_images_get', array($this, 'phlow_ajax_get_images'));
         add_action('wp_ajax_nopriv_phlow_photo_seen', array($this, 'phlow_ajax_photo_seen'));
         add_action('wp_ajax_phlow_photo_seen', array($this, 'phlow_ajax_photo_seen'));
-        // add_action('wp_ajax_nopriv_manage_seen', array($this, 'manage_seen'));
-        // add_action('wp_head', array($this, 'my_action_javascript' ));
 	}
-
-    public function my_action_javascript() { ?>
-        <script type="text/javascript">
-            //TODO move the SEEN call from document ready to waypoint for each phlow_line or phlow_group!
-            jQuery(document).ready(function($) {
-
-                var data = {
-                    'action': 'manage_seen',
-                    'seen': '<?php echo $this->seen;?>'
-                };
-
-                var ajax_url = "<?php echo admin_url('admin-ajax.php'); ?>";
-
-                // since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php
-                jQuery.post(ajax_url, data, function(response) {
-                });
-            });
-        </script> <?php
-    }
-
-    public function manage_seen(){
-        $seen = $_POST['seen'];
-
-        if (isset($seen) && $seen != ''){
-            $singleSeens = explode("*", $seen);
-
-            if (isset($singleSeens) && sizeof($singleSeens)>0){
-                foreach ($singleSeens as $singleSeen){
-                    if ($singleSeen != ''){
-                        list($photoId, $stream, $magazine, $moment) = explode(";", $singleSeen);
-
-                        if ($stream=='') $stream = null;
-                        if ($magazine=='') $magazine = null;
-                        if ($moment=='') $moment = null;
-
-                        $this->api->seen($photoId, $stream, $magazine, $moment);
-                    }
-                }
-            }
-        }
-
-        wp_die(); // this is required to terminate immediately and return a proper response
-    }
 
     public function addShortcodes()
     {
@@ -133,14 +87,8 @@ class phlow {
         wp_enqueue_style('phlow', $this->_plugin_url .'/css/phlow.css');
 
         // scripts
-        //wp_enqueue_script('ph_jquery_script', 'http' . ($_SERVER['SERVER_PORT'] == 443 ? 's' : '') . '://code.jquery.com/jquery-1.12.2.min.js', null, false);
         wp_register_script('ph_script', $this->_plugin_url .'/js/tipped/tipped.js', array('jquery'), null, false);
         wp_enqueue_script('ph_script');
-
-        //TODO Make Waypoint work!
-        //wp_register_script('ph_waypoint', $this->_plugin_url .'/js/waypoint.js', array('jquery'), null, false);
-        //wp_enqueue_script('ph_waypoint');
-
         wp_register_script('phlow', $this->_plugin_url . '/js/generator.js', array('jquery'), null, false);
         wp_enqueue_script('phlow');
         wp_register_script('phlow_autocomplete', $this->_plugin_url . '/js/autocomplete/jquery.easy-autocomplete.min.js', array('jquery'), null, false);
@@ -212,8 +160,6 @@ class phlow {
 					'src' => $photo->url
 				);
 
-				// $this->seen .= $photo->photoId.';;'.$context.';*';
-
 				if ($counter++ >= ($limit-1)) {
 					break;
 				}
@@ -229,8 +175,6 @@ class phlow {
 					'url' => 'https://app.phlow.com/moment/' . $context,
 					'src' => $photo->url
 				);
-
-                // $this->seen .= $photo->photoId.';;;'.$context.'*';
 
 				if ($counter++ >= ($limit-1)) {
 					break;
@@ -252,8 +196,6 @@ class phlow {
                         'url' => 'https://app.phlow.com/stream/' . $context . '/photo/' . $photo->photoId,
                         'src' => $photo->url
                     );
-
-                    // $this->seen .= $photo->photoId . ';' . $context . ';;*';
 
                     if ($counter++ >= ($limit - 1)) {
                         break;
