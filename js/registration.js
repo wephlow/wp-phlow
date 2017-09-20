@@ -4,6 +4,10 @@ jQuery(function($) {
         facebook: {
             appId: '1028666243811785',
             scope: 'email, user_about_me, user_birthday, user_website, public_profile'
+        },
+        google: {
+            clientId: '732177001013-7ksob7m2fse0iuoeubhers0vkruou9na.apps.googleusercontent.com',
+            cookiePolicy: 'single_host_origin'
         }
     };
 
@@ -15,6 +19,7 @@ jQuery(function($) {
             boxButtons = $('.phlow-reg-buttons', widget),
             btnSubmit = $('.phlow-reg-submit', widget),
             btnFacebook = $('.phlow-reg-facebook', widget),
+            btnGoogle = $('.phlow-reg-google', widget),
             boxErrors = $('.phlow-reg-errors', widget),
             loader = $('.phlow-reg-loader', widget),
             isBusy = false;
@@ -53,7 +58,7 @@ jQuery(function($) {
                 console.error(err);
             });
 
-            req.always(resetState);
+            req.always(finishProcessing);
         });
 
         // Facebook button
@@ -67,10 +72,7 @@ jQuery(function($) {
                     return;
                 }
 
-                isBusy = true;
-                loader.show();
-                boxButtons.hide();
-                boxErrors.empty().hide();
+                startProcessing();
 
                 var req = $.ajax({
                     method: 'POST',
@@ -94,8 +96,60 @@ jQuery(function($) {
                     console.error(err);
                 });
 
-                req.always(resetState);
+                req.always(finishProcessing);
             }, { scope: config.facebook.scope });
+        });
+
+        // Google button
+        btnGoogle.on('click', function() {
+            if (isBusy) {
+                return;
+            }
+
+            var auth2 = window.gapi.auth2.getAuthInstance();
+
+            var options = {
+                response_type: 'permission',
+                // redirect_uri: '',
+                fetch_basic_profile: true,
+                prompt: '',
+                scope: 'profile email'
+            };
+
+            auth2.signIn(options).then(
+                function(glres) {
+                    var authResponse = glres.getAuthResponse();
+
+                    startProcessing();
+
+                    var req = $.ajax({
+                        method: 'POST',
+                        url: phlowAjax.url,
+                        dataType: 'json',
+                        data: {
+                            action: 'phlow_user_social_create',
+                            googleToken: authResponse.access_token
+                        }
+                    });
+
+                    req.done(function(res) {
+                        if (!res.success) {
+                            showErrors(res.errors);
+                            return;
+                        }
+                        showMessage();
+                    });
+
+                    req.fail(function(err) {
+                        console.error(err);
+                    });
+
+                    req.always(finishProcessing);
+                },
+                function(err) {
+                    console.error(err);
+                }
+            );
         });
 
         function showErrors(errors) {
@@ -115,7 +169,14 @@ jQuery(function($) {
             widget.html(boxSuccess);
         }
 
-        function resetState() {
+        function startProcessing() {
+            isBusy = true;
+            loader.show();
+            boxButtons.hide();
+            boxErrors.empty().hide();
+        }
+
+        function finishProcessing() {
             isBusy = false;
             loader.hide();
             boxButtons.show();
@@ -147,8 +208,28 @@ jQuery(function($) {
         });
         FB.AppEvents.logPageView();
     };
+
+    // Google
+    window.gapiAsyncInit = function() {
+        window.gapi.load('auth2', function() {
+            if (window.gapi.auth2.getAuthInstance()) {
+                return;
+            }
+
+            var params = {
+                client_id: config.google.clientId,
+                cookiepolicy: config.google.cookiePolicy
+            };
+
+            window.gapi.auth2.init(params).then(
+                function() {},
+                function(err) {}
+            );
+        });
+    };
 });
 
+// Load Facebook API
 (function(d, s, id){
     var js, fjs = d.getElementsByTagName(s)[0];
     if (d.getElementById(id)) {return;}
@@ -156,3 +237,15 @@ jQuery(function($) {
     js.src = "//connect.facebook.net/en_US/sdk.js";
     fjs.parentNode.insertBefore(js, fjs);
 }(document, 'script', 'facebook-jssdk'));
+
+// Load Google API
+(function(d, s, id, cb) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) {return;}
+    js = d.createElement(s); js.id = id;
+    js.src = '//apis.google.com/js/client:platform.js';
+    fjs.parentNode.insertBefore(js, fjs);
+    js.onload = cb;
+})(document, 'script', 'google-login', function() {
+    window.gapiAsyncInit();
+});
