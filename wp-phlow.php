@@ -267,6 +267,8 @@ class phlow {
 
     // phlow group widget
     public function shortcode_groups_image($atts) {
+		$owned = $atts['owned'];
+
 		$dataParams = array(
     		'data-type=group',
     		'data-source=' . $atts['source'],
@@ -274,7 +276,7 @@ class phlow {
 			// 'data-clean=' . $atts['clean'],
 			'data-nudity=' . $atts['nudity'],
 			'data-violence=' . $atts['violence'],
-			'data-owned=' . $atts['owned']
+			'data-owned=' . ((isset($owned) && !empty($owned)) ? $owned : 0)
     	);
 
     	$dataParams = join(' ', $dataParams);
@@ -304,6 +306,8 @@ class phlow {
 
 	// phlow line widget
 	public function shortcode_line_images($atts) {
+		$owned = $atts['owned'];
+
 		$dataParams = array(
     		'data-type=line',
     		'data-source=' . $atts['source'],
@@ -311,7 +315,7 @@ class phlow {
 			// 'data-clean=' . $atts['clean'],
 			'data-nudity=' . $atts['nudity'],
 			'data-violence=' . $atts['violence'],
-			'data-owned=' . $atts['owned']
+			'data-owned=' . ((isset($owned) && !empty($owned)) ? $owned : 0)
     	);
 
     	$dataParams = join(' ', $dataParams);
