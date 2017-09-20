@@ -53,6 +53,8 @@ class phlow {
         add_action('wp_ajax_phlow_photo_seen', array($this, 'phlow_ajax_photo_seen'));
         add_action('wp_ajax_nopriv_phlow_user_create', array($this, 'phlow_ajax_create_user'));
         add_action('wp_ajax_phlow_user_create', array($this, 'phlow_ajax_create_user'));
+        add_action('wp_ajax_nopriv_phlow_user_social_create', array($this, 'phlow_ajax_create_user_social'));
+        add_action('wp_ajax_phlow_user_social_create', array($this, 'phlow_ajax_create_user_social'));
 	}
 
     public function addShortcodes()
@@ -418,7 +420,10 @@ class phlow {
 					<label>Password</label>
 					<input type="password" class="phlow-reg-passwd" />
 				</p>
-				<button class="phlow-reg-submit">Register</button>
+                <div class="phlow-reg-buttons">
+				    <button class="phlow-reg-submit">Register</button>
+                    <button class="phlow-reg-facebook">Facebook</button>
+                </div>
                 <div class="phlow-reg-loader">
                     <svg width="32px" height="32px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid"><rect x="0" y="0" width="100" height="100" fill="none"></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(0 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(30 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.08333333333333333s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(60 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.16666666666666666s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(90 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.25s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(120 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.3333333333333333s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(150 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.4166666666666667s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(180 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.5s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(210 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.5833333333333334s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(240 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.6666666666666666s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(270 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.75s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(300 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.8333333333333334s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(330 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.9166666666666666s" repeatCount="indefinite"/></rect></svg>
                 </div>
@@ -1321,6 +1326,44 @@ class phlow {
             $response = array(
                 'success' => true
             );
+        }
+
+        echo json_encode($response);
+        wp_die();
+    }
+
+    public function phlow_ajax_create_user_social() {
+        $this->query = $_POST;
+        $params = array();
+
+        if (isset($this->query['facebookToken'])) {
+            $params['facebookToken'] = trim($this->query['facebookToken']);
+        }
+
+        if (isset($this->query['googleToken'])) {
+            $params['googleToken'] = trim($this->query['googleToken']);
+        }
+
+        if (!isset($params['facebookToken']) && !isset($params['googleToken'])) {
+            $response = array(
+                'success' => false,
+                'errors' => array('Please provide access token')
+            );
+        }
+        else {
+            $req = $this->api->registerSocial($params);
+
+            if (isset($req->status) && $req->status != 200) {
+                $response = array(
+                    'success' => false,
+                    'errors' => array($req->message)
+                );
+            }
+            else {
+                $response = array(
+                    'success' => true
+                );
+            }
         }
 
         echo json_encode($response);

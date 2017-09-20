@@ -137,6 +137,10 @@ class api {
         return $this->signedRequest('POST', '/users', $data, false, false);
     }
 
+    public function registerSocial($data = null) {
+        return $this->signedRequest('POST', '/users/social', $data, false, false);
+    }
+
 	public function me() {
 		return $this->signedRequest('GET', '/users/me');
 	}
