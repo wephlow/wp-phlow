@@ -19,3 +19,18 @@
 .phlow-loader {
 	text-align: center;
 }
+
+.phlow-reg-loader {
+	display: none;
+}
+
+.phlow-reg-errors {
+	display: none;
+	color: #e94033;
+}
+
+.phlow-reg-success {
+	box-shadow: 0 0 8px #e6e6e6;
+    padding: 15px;
+    text-align: center;
+}

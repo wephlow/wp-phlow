@@ -51,6 +51,8 @@ class phlow {
         add_action('wp_ajax_phlow_images_get', array($this, 'phlow_ajax_get_images'));
         add_action('wp_ajax_nopriv_phlow_photo_seen', array($this, 'phlow_ajax_photo_seen'));
         add_action('wp_ajax_phlow_photo_seen', array($this, 'phlow_ajax_photo_seen'));
+        add_action('wp_ajax_nopriv_phlow_user_create', array($this, 'phlow_ajax_create_user'));
+        add_action('wp_ajax_phlow_user_create', array($this, 'phlow_ajax_create_user'));
 	}
 
     public function addShortcodes()
@@ -59,6 +61,7 @@ class phlow {
             add_shortcode('phlow_stream', array($this, 'shortcode_phlow_page'));
             add_shortcode('phlow_group', array($this, 'shortcode_groups_image'));
             add_shortcode('phlow_line', array($this, 'shortcode_line_images'));
+            add_shortcode('phlow_registration', array($this, 'shortcode_registration'));
         }
     }
 
@@ -99,6 +102,8 @@ class phlow {
         wp_enqueue_script('phlow_visible');
         wp_register_script('phlow_loader', $this->_plugin_url . '/js/loader.js', array('jquery'), null, false);
         wp_enqueue_script('phlow_loader');
+        wp_register_script('phlow_registration', $this->_plugin_url . '/js/registration.js', array('jquery'), null, false);
+        wp_enqueue_script('phlow_registration');
 
 		// js variables
 		wp_localize_script('phlow', 'phlowAjax', array(
@@ -394,6 +399,33 @@ class phlow {
 		$shortcode .= ']';
 
 		return $shortcode;
+	}
+
+	// phlow registration widget
+	public function shortcode_registration($atts) {
+		$widgetId = 'phlow_registration_' . (time() + rand(1, 1000));
+
+        ob_start();
+
+		echo '
+			<div id="' . $widgetId . '" class="phlow-reg">
+                <ul class="phlow-reg-errors"></ul>
+				<p>
+					<label>Email</label>
+					<input type="text" class="phlow-reg-email" />
+				</p>
+				<p>
+					<label>Password</label>
+					<input type="password" class="phlow-reg-passwd" />
+				</p>
+				<button class="phlow-reg-submit">Register</button>
+                <div class="phlow-reg-loader">
+                    <svg width="32px" height="32px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid"><rect x="0" y="0" width="100" height="100" fill="none"></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(0 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(30 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.08333333333333333s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(60 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.16666666666666666s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(90 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.25s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(120 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.3333333333333333s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(150 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.4166666666666667s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(180 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.5s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(210 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.5833333333333334s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(240 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.6666666666666666s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(270 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.75s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(300 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.8333333333333334s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(330 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.9166666666666666s" repeatCount="indefinite"/></rect></svg>
+                </div>
+			</div>
+		';
+
+		return ob_get_clean();
 	}
 
 	public function phlow_menu() {
@@ -1255,6 +1287,45 @@ class phlow {
 		echo json_encode($response);
 		wp_die();
 	}
+
+    public function phlow_ajax_create_user() {
+        $this->query = $_POST;
+
+        $params = array(
+            'email' => trim($this->query['email']),
+            'username' => ''
+        );
+
+        // Prepare password
+        $password = $this->query['password'];
+
+        if (isset($password) && !empty($password)) {
+            $password = hash('sha256', $password);
+        }
+        else {
+            $password = '';
+        }
+
+        $params['password'] = $password;
+
+        // Send request
+        $req = $this->api->register($params);
+
+        if (isset($req->status) && $req->status != 200) {
+            $response = array(
+                'success' => false,
+                'errors' => array($req->message)
+            );
+        }
+        else {
+            $response = array(
+                'success' => true
+            );
+        }
+
+        echo json_encode($response);
+        wp_die();
+    }
 
 	public function admin_head() {
 		$plugin_url = plugins_url('/', __FILE__);

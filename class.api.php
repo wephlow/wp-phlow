@@ -72,18 +72,24 @@ class api {
 		$uri = '/v1' . $endpoint;
 		$url = self::$apiUrl . $uri;
 		$time = $this->time();
+        $httpHeaders = array();
 
 		$curl = curl_init();
-		if ($method == 'POST'){
+
+        if ($method == 'POST') {
             curl_setopt($curl, CURLOPT_POST, 1);
+            $httpHeaders[] = 'Content-Type:application/json';
+
+            if (is_array($body)) {
+                curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($body));
+            }
         }
+
+        $httpHeaders[] = 'X-PHLOW:' . $this->generateSignature($time, $method, $uri, $body, $isReader, $isUserSigned);
 
         $xPhlowGateway = $this->getPageURL($isAjaxPage);
 
-        $httpHeaders = array();
-        $httpHeaders[] = 'X-PHLOW:' . $this->generateSignature($time, $method, $uri, $body, $isReader, $isUserSigned);
-
-        if (isset($xPhlowGateway)){
+        if (isset($xPhlowGateway)) {
             $httpHeaders[] = 'X-PHLOW-GATEWAY:wordpress-embedded:'.$xPhlowGateway;
         }
 
@@ -126,6 +132,10 @@ class api {
 
 		return $time;
 	}
+
+    public function register($data = null) {
+        return $this->signedRequest('POST', '/users', $data, false, false);
+    }
 
 	public function me() {
 		return $this->signedRequest('GET', '/users/me');
