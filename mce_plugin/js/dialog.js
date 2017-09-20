@@ -260,8 +260,6 @@
 			context = data.context.trim(),
 			source, type, width, height;
 
-		alert(JSON.stringify(data));
-
 		if (data.source == 1 || data.source == 2) {
 			source = 'magazine';
 		}
