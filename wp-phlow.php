@@ -103,9 +103,7 @@ class phlow {
         wp_register_script('phlow_visible', $this->_plugin_url . '/js/jquery-visible/jquery.visible.min.js', array('jquery'), null, false);
         wp_enqueue_script('phlow_visible');
         wp_register_script('phlow_loader', $this->_plugin_url . '/js/loader.js', array('jquery'), null, false);
-        wp_enqueue_script('phlow_loader');
         wp_register_script('phlow_registration', $this->_plugin_url . '/js/registration.js', array('jquery'), null, false);
-        wp_enqueue_script('phlow_registration');
 
 		// js variables
 		wp_localize_script('phlow', 'phlowAjax', array(
@@ -216,7 +214,9 @@ class phlow {
 
     // phlow group widget
     public function shortcode_groups_image($atts) {
-		$nudity = $atts['nudity'];
+		wp_enqueue_script('phlow_loader');
+
+        $nudity = $atts['nudity'];
 		$violence = $atts['violence'];
 		$owned = $atts['owned'];
 
@@ -257,6 +257,8 @@ class phlow {
 
 	// phlow line widget
 	public function shortcode_line_images($atts) {
+        wp_enqueue_script('phlow_loader');
+
 		$nudity = $atts['nudity'];
 		$violence = $atts['violence'];
 		$owned = $atts['owned'];
@@ -405,6 +407,8 @@ class phlow {
 
 	// phlow registration widget
 	public function shortcode_registration($atts) {
+        wp_enqueue_script('phlow_registration');
+
 		$widgetId = 'phlow_registration_' . (time() + rand(1, 1000));
 
         ob_start();
