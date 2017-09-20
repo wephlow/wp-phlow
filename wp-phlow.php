@@ -267,12 +267,7 @@ class phlow {
 
     // phlow group widget
     public function shortcode_groups_image($atts) {
-		ob_start();
-
-    	$poweredBy = $this->generatePoweredByMessage($atts);
-    	$microtime = microtime().'-'.rand(1, 100);
-
-    	$dataParams = array(
+		$dataParams = array(
     		'data-type=group',
     		'data-source=' . $atts['source'],
 			'data-context=' . $atts['context'],
@@ -283,9 +278,13 @@ class phlow {
     	);
 
     	$dataParams = join(' ', $dataParams);
+    	$poweredBy = $this->generatePoweredByMessage($atts);
+    	$widgetId = 'phlow_widget_' . (time() + rand(1, 1000));
+
+		ob_start();
 
     	echo '
-    	<div class="image-list" id="phlow-' . $microtime . '" ' . $dataParams . '>
+    	<div class="image-list" id="' . $widgetId . '" ' . $dataParams . '>
     		<ul class="groups-images">
 	    		<div class="powered-by">
 	    			<span class="first-child">' . __($poweredBy) . '</span>
@@ -305,11 +304,6 @@ class phlow {
 
 	// phlow line widget
 	public function shortcode_line_images($atts) {
-		ob_start();
-
-		$poweredBy = $this->generatePoweredByMessage($atts);
-		$microtime = rand(1, 10000);
-
 		$dataParams = array(
     		'data-type=line',
     		'data-source=' . $atts['source'],
@@ -321,9 +315,13 @@ class phlow {
     	);
 
     	$dataParams = join(' ', $dataParams);
+    	$poweredBy = $this->generatePoweredByMessage($atts);
+		$widgetId = 'phlow_widget_' . (time() + rand(1, 1000));
+
+		ob_start();
 
     	echo '
-		<div class="image-list-horizontal phlows" id="phlow' . $microtime . '" ' . $dataParams . '>
+		<div class="image-list-horizontal phlows" id="' . $widgetId . '" ' . $dataParams . '>
 			<ul class="line-images">
 				<div class="powered-by">
 					<span class="first-child">' . __($poweredBy) . '</span>

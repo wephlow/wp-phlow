@@ -1,6 +1,6 @@
 jQuery(function($) {
 
-	var widgets = $('div[id*=phlow]'),
+	var widgets = $('div[id*=phlow_widget]'),
 		loadedWidgets = [],
 		seenImages = [];
 
