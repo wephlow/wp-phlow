@@ -10,10 +10,7 @@ jQuery(function($) {
 
 		if (data.type == undefined ||
 			data.source == undefined ||
-			data.context == undefined ||
-			data.violence == undefined ||
-			data.nudity == undefined ||
-			data.owned == undefined)
+			data.context == undefined)
 		{
 			return;
 		}

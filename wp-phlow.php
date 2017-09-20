@@ -267,6 +267,8 @@ class phlow {
 
     // phlow group widget
     public function shortcode_groups_image($atts) {
+		$nudity = $atts['nudity'];
+		$violence = $atts['violence'];
 		$owned = $atts['owned'];
 
 		$dataParams = array(
@@ -274,8 +276,8 @@ class phlow {
     		'data-source=' . $atts['source'],
 			'data-context=' . $atts['context'],
 			// 'data-clean=' . $atts['clean'],
-			'data-nudity=' . $atts['nudity'],
-			'data-violence=' . $atts['violence'],
+			'data-nudity=' . ((isset($nudity) && !empty($nudity)) ? $nudity : 0),
+			'data-violence=' . ((isset($violence) && !empty($violence)) ? $violence : 0),
 			'data-owned=' . ((isset($owned) && !empty($owned)) ? $owned : 0)
     	);
 
@@ -306,6 +308,8 @@ class phlow {
 
 	// phlow line widget
 	public function shortcode_line_images($atts) {
+		$nudity = $atts['nudity'];
+		$violence = $atts['violence'];
 		$owned = $atts['owned'];
 
 		$dataParams = array(
@@ -313,8 +317,8 @@ class phlow {
     		'data-source=' . $atts['source'],
 			'data-context=' . $atts['context'],
 			// 'data-clean=' . $atts['clean'],
-			'data-nudity=' . $atts['nudity'],
-			'data-violence=' . $atts['violence'],
+			'data-nudity=' . ((isset($nudity) && !empty($nudity)) ? $nudity : 0),
+			'data-violence=' . ((isset($violence) && !empty($violence)) ? $violence : 0),
 			'data-owned=' . ((isset($owned) && !empty($owned)) ? $owned : 0)
     	);
 
@@ -1170,6 +1174,7 @@ class phlow {
 	public function phlow_ajax_get_images() {
 		$this->query = $_GET;
 		$errors = array();
+		$params = array();
 
 		// Validate type
 		if (isset($this->query['type'])) {
@@ -1190,6 +1195,9 @@ class phlow {
 			if ($source != 'streams' && $source != 'magazine' && $source != 'moment') {
 				$errors[] = __('Invalid source parameter');
 			}
+			else {
+				$params['source'] = $source;
+			}
 		}
 		else {
 			$errors[] = __('Please provide source parameter');
@@ -1199,34 +1207,26 @@ class phlow {
 		if (isset($this->query['context'])) {
 			$context = trim($this->query['context']);
 			$context = preg_replace('/[^0-9a-zA-Z,:]/', '', $context);
+			$params['context'] = $context;
 		}
 		else {
 			$errors[] = __('Please provide context parameter');
 		}
 
-		// Validate violence
-		if (isset($this->query['violence'])) {
-			$violence = intval($this->query['violence']) ? 1 : 0;
-		}
-		else {
-			$errors[] = __('Please provide violence parameter');
-		}
+		// Violence
+		$violence = $this->query['violence'];
+		$violence = (isset($violence) && !empty($violence)) ? 1 : 0;
+		$params['violence'] = $violence;
 
-		// Validate nudity
-		if (isset($this->query['nudity'])) {
-			$nudity = intval($this->query['nudity']) ? 1 : 0;
-		}
-		else {
-			$errors[] = __('Please provide nudity parameter');
-		}
+		// Nudity
+		$nudity = $this->query['nudity'];
+		$nudity = (isset($nudity) && !empty($nudity)) ? 1 : 0;
+		$params['nudity'] = $nudity;
 
-		// Validate owned
-		if (isset($this->query['owned'])) {
-			$owned = intval($this->query['owned']) ? 1 : 0;
-		}
-		else {
-			$errors[] = __('Please provide owned parameter');
-		}
+		// Owned
+		$owned = $this->query['owned'];
+		$owned = (isset($owned) && !empty($owned)) ? 1 : 0;
+		$params['owned'] = $owned;
 
 		// Check errors
 		if (count($errors)) {
@@ -1237,10 +1237,10 @@ class phlow {
 		}
 		else {
 			if ($type == 'group') {
-				$images = $this->phlowLoadImages($this->query, 9);
+				$images = $this->phlowLoadImages($params, 9);
 			}
-			if ($type == 'line') {
-				$images = $this->phlowLoadImages($this->query);
+			else if ($type == 'line') {
+				$images = $this->phlowLoadImages($params);
 			}
 
 			$response = array(
