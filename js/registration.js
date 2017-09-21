@@ -16,7 +16,6 @@ jQuery(function($) {
 
         var inputEmail = $('.phlow-reg-email', widget),
             inputPasswd = $('.phlow-reg-passwd', widget),
-            boxButtons = $('.phlow-reg-buttons', widget),
             btnSubmit = $('.phlow-reg-submit', widget),
             btnFacebook = $('.phlow-reg-facebook', widget),
             btnGoogle = $('.phlow-reg-google', widget),
@@ -30,10 +29,7 @@ jQuery(function($) {
                 return;
             }
 
-            isBusy = true;
-            loader.show();
-            boxButtons.hide();
-            boxErrors.empty().hide();
+            startProcessing();
 
             var req = $.ajax({
                 method: 'POST',
@@ -172,14 +168,12 @@ jQuery(function($) {
         function startProcessing() {
             isBusy = true;
             loader.show();
-            boxButtons.hide();
             boxErrors.empty().hide();
         }
 
         function finishProcessing() {
             isBusy = false;
             loader.hide();
-            boxButtons.show();
         }
     }
 
