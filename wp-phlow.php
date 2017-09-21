@@ -2,7 +2,7 @@
 /**
  * Plugin Name: wp-phlow
  * Description: phlow allows you to embed a carousel or a widget of photographs relevant to a specific theme or context. Be it #wedding#gowns, #portraits#blackandwhite or #yoga, phlow provides you with images that are fresh and relevant. To get started, log through a phlow account (it is 100% free) and either embed the stream in your WYSIWYG editor or add a widget to your blog.
- * Version: 1.3.1
+ * Version: 1.3.2
  * Author: phlow
  * Author URI: http://phlow.com
  */
