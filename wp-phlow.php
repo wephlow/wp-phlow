@@ -409,12 +409,22 @@ class phlow {
 	public function shortcode_registration($atts) {
         wp_enqueue_script('phlow_registration');
 
+        $tags = $atts['tags'];
+        $dataParams = array();
+
+        if (isset($tags) && !empty($tags)) {
+            $tags = preg_replace('/[^0-9a-zA-Z,:]/', '', $tags);
+            $tags = strtolower($tags);
+            $dataParams[] = 'data-tags=' . $tags;
+        }
+
 		$widgetId = 'phlow_registration_' . (time() + rand(1, 1000));
+        $dataParams = implode(' ', $dataParams);
 
         ob_start();
 
 		echo '
-			<div id="' . $widgetId . '" class="phlow-reg">
+			<div id="' . $widgetId . '" ' . $dataParams . ' class="phlow-reg">
                 <ul class="phlow-reg-errors"></ul>
 				<div class="field-block">
 					<input type="text" placeholder="Email" class="phlow-reg-email" />
@@ -1318,6 +1328,32 @@ class phlow {
 
         $params['password'] = $password;
 
+        // Prepare favorite tags
+        $tags = $this->query['tags'];
+
+        if (isset($tags) && !empty($tags)) {
+            $tags = preg_replace('/[^0-9a-zA-Z,:]/', '', $tags);
+            $tags = strtolower($tags);
+            $tags = explode(',', $tags);
+
+            $favoriteTags = array();
+
+            foreach ($tags as $value) {
+                if (empty($value) || strlen($value) < 3) {
+                    continue;
+                }
+
+                $favoriteTags[] = array(
+                    'tag' => $value,
+                    'score' => 1
+                );
+            }
+
+            if (count($favoriteTags)) {
+                $params['favoriteTags'] = $favoriteTags;
+            }
+        }
+
         // Send request
         $req = $this->api->register($params);
 
@@ -1341,12 +1377,40 @@ class phlow {
         $this->query = $_POST;
         $params = array();
 
+        // Facebook token
         if (isset($this->query['facebookToken'])) {
             $params['facebookToken'] = trim($this->query['facebookToken']);
         }
 
+        // Google token
         if (isset($this->query['googleToken'])) {
             $params['googleToken'] = trim($this->query['googleToken']);
+        }
+
+        // Prepare favorite tags
+        $tags = $this->query['tags'];
+
+        if (isset($tags) && !empty($tags)) {
+            $tags = preg_replace('/[^0-9a-zA-Z,:]/', '', $tags);
+            $tags = strtolower($tags);
+            $tags = explode(',', $tags);
+
+            $favoriteTags = array();
+
+            foreach ($tags as $value) {
+                if (empty($value) || strlen($value) < 3) {
+                    continue;
+                }
+
+                $favoriteTags[] = array(
+                    'tag' => $value,
+                    'score' => 1
+                );
+            }
+
+            if (count($favoriteTags)) {
+                $params['favoriteTags'] = $favoriteTags;
+            }
         }
 
         if (!isset($params['facebookToken']) && !isset($params['googleToken'])) {

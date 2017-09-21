@@ -21,6 +21,7 @@ jQuery(function($) {
             btnGoogle = $('.phlow-reg-google', widget),
             boxErrors = $('.phlow-reg-errors', widget),
             loader = $('.phlow-reg-loader', widget),
+            tags = widget.data('tags'),
             isBusy = false;
 
         // Submit button
@@ -31,15 +32,21 @@ jQuery(function($) {
 
             startProcessing();
 
+            var data = {
+                action: 'phlow_user_create',
+                email: inputEmail.val(),
+                password: inputPasswd.val()
+            };
+
+            if (tags) {
+                data.tags = tags;
+            }
+
             var req = $.ajax({
                 method: 'POST',
                 url: phlowAjax.url,
                 dataType: 'json',
-                data: {
-                    action: 'phlow_user_create',
-                    email: inputEmail.val(),
-                    password: inputPasswd.val()
-                }
+                data: data
             });
 
             req.done(function(res) {
@@ -70,14 +77,20 @@ jQuery(function($) {
 
                 startProcessing();
 
+                var data = {
+                    action: 'phlow_user_social_create',
+                    facebookToken: fbres.authResponse.accessToken
+                };
+
+                if (tags) {
+                    data.tags = tags;
+                }
+
                 var req = $.ajax({
                     method: 'POST',
                     url: phlowAjax.url,
                     dataType: 'json',
-                    data: {
-                        action: 'phlow_user_social_create',
-                        facebookToken: fbres.authResponse.accessToken
-                    }
+                    data: data
                 });
 
                 req.done(function(res) {
@@ -118,14 +131,20 @@ jQuery(function($) {
 
                     startProcessing();
 
+                    var data = {
+                        action: 'phlow_user_social_create',
+                        googleToken: authResponse.access_token
+                    };
+
+                    if (tags) {
+                        data.tags = tags;
+                    }
+
                     var req = $.ajax({
                         method: 'POST',
                         url: phlowAjax.url,
                         dataType: 'json',
-                        data: {
-                            action: 'phlow_user_social_create',
-                            googleToken: authResponse.access_token
-                        }
+                        data: data
                     });
 
                     req.done(function(res) {
