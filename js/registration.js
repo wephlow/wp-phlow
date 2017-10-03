@@ -16,12 +16,12 @@ jQuery(function($) {
 
         var inputEmail = $('.phlow-reg-email', widget),
             inputPasswd = $('.phlow-reg-passwd', widget),
-            boxButtons = $('.phlow-reg-buttons', widget),
             btnSubmit = $('.phlow-reg-submit', widget),
             btnFacebook = $('.phlow-reg-facebook', widget),
             btnGoogle = $('.phlow-reg-google', widget),
             boxErrors = $('.phlow-reg-errors', widget),
             loader = $('.phlow-reg-loader', widget),
+            tags = widget.data('tags'),
             isBusy = false;
 
         // Submit button
@@ -30,20 +30,23 @@ jQuery(function($) {
                 return;
             }
 
-            isBusy = true;
-            loader.show();
-            boxButtons.hide();
-            boxErrors.empty().hide();
+            startProcessing();
+
+            var data = {
+                action: 'phlow_user_create',
+                email: inputEmail.val(),
+                password: inputPasswd.val()
+            };
+
+            if (tags) {
+                data.tags = tags;
+            }
 
             var req = $.ajax({
                 method: 'POST',
                 url: phlowAjax.url,
                 dataType: 'json',
-                data: {
-                    action: 'phlow_user_create',
-                    email: inputEmail.val(),
-                    password: inputPasswd.val()
-                }
+                data: data
             });
 
             req.done(function(res) {
@@ -74,14 +77,20 @@ jQuery(function($) {
 
                 startProcessing();
 
+                var data = {
+                    action: 'phlow_user_social_create',
+                    facebookToken: fbres.authResponse.accessToken
+                };
+
+                if (tags) {
+                    data.tags = tags;
+                }
+
                 var req = $.ajax({
                     method: 'POST',
                     url: phlowAjax.url,
                     dataType: 'json',
-                    data: {
-                        action: 'phlow_user_social_create',
-                        facebookToken: fbres.authResponse.accessToken
-                    }
+                    data: data
                 });
 
                 req.done(function(res) {
@@ -122,14 +131,20 @@ jQuery(function($) {
 
                     startProcessing();
 
+                    var data = {
+                        action: 'phlow_user_social_create',
+                        googleToken: authResponse.access_token
+                    };
+
+                    if (tags) {
+                        data.tags = tags;
+                    }
+
                     var req = $.ajax({
                         method: 'POST',
                         url: phlowAjax.url,
                         dataType: 'json',
-                        data: {
-                            action: 'phlow_user_social_create',
-                            googleToken: authResponse.access_token
-                        }
+                        data: data
                     });
 
                     req.done(function(res) {
@@ -172,14 +187,12 @@ jQuery(function($) {
         function startProcessing() {
             isBusy = true;
             loader.show();
-            boxButtons.hide();
             boxErrors.empty().hide();
         }
 
         function finishProcessing() {
             isBusy = false;
             loader.hide();
-            boxButtons.show();
         }
     }
 

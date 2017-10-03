@@ -2,7 +2,7 @@
 /**
  * Plugin Name: wp-phlow
  * Description: phlow allows you to embed a carousel or a widget of photographs relevant to a specific theme or context. Be it #wedding#gowns, #portraits#blackandwhite or #yoga, phlow provides you with images that are fresh and relevant. To get started, log through a phlow account (it is 100% free) and either embed the stream in your WYSIWYG editor or add a widget to your blog.
- * Version: 1.3.2
+ * Version: 1.3.1
  * Author: phlow
  * Author URI: http://phlow.com
  */
@@ -409,28 +409,38 @@ class phlow {
 	public function shortcode_registration($atts) {
         wp_enqueue_script('phlow_registration');
 
+        $tags = $atts['tags'];
+        $dataParams = array();
+
+        if (isset($tags) && !empty($tags)) {
+            $tags = preg_replace('/[^0-9a-zA-Z,:]/', '', $tags);
+            $tags = strtolower($tags);
+            $dataParams[] = 'data-tags=' . $tags;
+        }
+
 		$widgetId = 'phlow_registration_' . (time() + rand(1, 1000));
+        $dataParams = implode(' ', $dataParams);
 
         ob_start();
 
 		echo '
-			<div id="' . $widgetId . '" class="phlow-reg">
+			<div id="' . $widgetId . '" ' . $dataParams . ' class="phlow-reg">
                 <ul class="phlow-reg-errors"></ul>
-				<p>
-					<label>Email</label>
-					<input type="text" class="phlow-reg-email" />
-				</p>
-				<p>
-					<label>Password</label>
-					<input type="password" class="phlow-reg-passwd" />
-				</p>
+				<div class="field-block">
+					<input type="text" placeholder="Email" class="phlow-reg-email" />
+				</div>
+				<div class="field-block">
+					<input type="password" placeholder="Password" class="phlow-reg-passwd" />
+				</div>
                 <div class="phlow-reg-buttons">
 				    <button class="phlow-reg-submit">Register</button>
                     <button class="phlow-reg-facebook">Facebook</button>
                     <button class="phlow-reg-google">Google</button>
                 </div>
                 <div class="phlow-reg-loader">
-                    <svg width="32px" height="32px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid"><rect x="0" y="0" width="100" height="100" fill="none"></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(0 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(30 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.08333333333333333s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(60 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.16666666666666666s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(90 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.25s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(120 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.3333333333333333s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(150 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.4166666666666667s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(180 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.5s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(210 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.5833333333333334s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(240 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.6666666666666666s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(270 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.75s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(300 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.8333333333333334s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(330 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.9166666666666666s" repeatCount="indefinite"/></rect></svg>
+                	<div class="spin">
+                    	<svg width="32px" height="32px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid"><rect x="0" y="0" width="100" height="100" fill="none"></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(0 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(30 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.08333333333333333s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(60 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.16666666666666666s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(90 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.25s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(120 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.3333333333333333s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(150 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.4166666666666667s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(180 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.5s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(210 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.5833333333333334s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(240 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.6666666666666666s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(270 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.75s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(300 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.8333333333333334s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(330 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.9166666666666666s" repeatCount="indefinite"/></rect></svg>
+                    </div>
                 </div>
 			</div>
 		';
@@ -1318,6 +1328,32 @@ class phlow {
 
         $params['password'] = $password;
 
+        // Prepare favorite tags
+        $tags = $this->query['tags'];
+
+        if (isset($tags) && !empty($tags)) {
+            $tags = preg_replace('/[^0-9a-zA-Z,:]/', '', $tags);
+            $tags = strtolower($tags);
+            $tags = explode(',', $tags);
+
+            $favoriteTags = array();
+
+            foreach ($tags as $value) {
+                if (empty($value) || strlen($value) < 3) {
+                    continue;
+                }
+
+                $favoriteTags[] = array(
+                    'tag' => $value,
+                    'score' => 1
+                );
+            }
+
+            if (count($favoriteTags)) {
+                $params['favoriteTags'] = $favoriteTags;
+            }
+        }
+
         // Send request
         $req = $this->api->register($params);
 
@@ -1341,12 +1377,40 @@ class phlow {
         $this->query = $_POST;
         $params = array();
 
+        // Facebook token
         if (isset($this->query['facebookToken'])) {
             $params['facebookToken'] = trim($this->query['facebookToken']);
         }
 
+        // Google token
         if (isset($this->query['googleToken'])) {
             $params['googleToken'] = trim($this->query['googleToken']);
+        }
+
+        // Prepare favorite tags
+        $tags = $this->query['tags'];
+
+        if (isset($tags) && !empty($tags)) {
+            $tags = preg_replace('/[^0-9a-zA-Z,:]/', '', $tags);
+            $tags = strtolower($tags);
+            $tags = explode(',', $tags);
+
+            $favoriteTags = array();
+
+            foreach ($tags as $value) {
+                if (empty($value) || strlen($value) < 3) {
+                    continue;
+                }
+
+                $favoriteTags[] = array(
+                    'tag' => $value,
+                    'score' => 1
+                );
+            }
+
+            if (count($favoriteTags)) {
+                $params['favoriteTags'] = $favoriteTags;
+            }
         }
 
         if (!isset($params['facebookToken']) && !isset($params['googleToken'])) {
