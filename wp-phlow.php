@@ -179,7 +179,7 @@ class phlow {
 					'id' => $photo->photoId,
 					'url' => 'https://app.phlow.com/moment/' . $context . '?autoscroll=1',
 					'src' => $photo->url
-				)
+				);
 
 				if ($counter++ >= ($limit-1)) {
 					break;
