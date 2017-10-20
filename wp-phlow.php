@@ -161,7 +161,7 @@ class phlow {
 			foreach ($photos as $photo) {
 				$images[] = array(
 					'id' => $photo->photoId,
-					'url' => 'https://app.phlow.com/magazine/' . $context,
+					'url' => 'https://app.phlow.com/magazine/' . $context . '?autoscroll=1',
 					'src' => $photo->url
 				);
 
@@ -177,7 +177,7 @@ class phlow {
 			foreach ($photos as $photo) {
 				$images[] = array(
 					'id' => $photo->photoId,
-					'url' => 'https://app.phlow.com/moment/' . $context,
+					'url' => 'https://app.phlow.com/moment/' . $context . '?autoscroll=1',
 					'src' => $photo->url
 				);
 
@@ -198,7 +198,7 @@ class phlow {
                 foreach ($photos as $photo) {
                     $images[] = array(
                     	'id' => $photo->photoId,
-                        'url' => 'https://app.phlow.com/stream/' . $context . '/photo/' . $photo->photoId,
+                        'url' => 'https://app.phlow.com/stream/' . $context . '/photo/' . $photo->photoId . '?autoscroll=1',
                         'src' => $photo->url
                     );
 
