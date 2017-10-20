@@ -434,8 +434,8 @@ class phlow {
 				</div>
                 <div class="phlow-reg-buttons">
 				    <button class="phlow-reg-submit">Register</button>
-                    <button class="phlow-reg-facebook">Facebook</button>
-                    <button class="phlow-reg-google">Google</button>
+                    <button class="phlow-reg-facebook">Sign up with Facebook</button>
+                    <button class="phlow-reg-google">Sign up with Google</button>
                 </div>
                 <div class="phlow-reg-loader">
                 	<div class="spin">
