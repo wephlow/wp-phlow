@@ -1,16 +1,5 @@
 jQuery(function($) {
 
-    var config = {
-        facebook: {
-            appId: '1028666243811785',
-            scope: 'email, user_about_me, user_birthday, user_website, public_profile'
-        },
-        google: {
-            clientId: '732177001013-7ksob7m2fse0iuoeubhers0vkruou9na.apps.googleusercontent.com',
-            cookiePolicy: 'single_host_origin'
-        }
-    };
-
     function widgetInit() {
         var widget = this;
 
@@ -18,6 +7,7 @@ jQuery(function($) {
             inputPasswd = $('.phlow-reg-passwd', widget),
             btnSubmit = $('.phlow-reg-submit', widget),
             btnFacebook = $('.phlow-reg-facebook', widget),
+            btnTwitter = $('.phlow-reg-twitter', widget),
             btnGoogle = $('.phlow-reg-google', widget),
             boxErrors = $('.phlow-reg-errors', widget),
             loader = $('.phlow-reg-loader', widget),
@@ -106,7 +96,7 @@ jQuery(function($) {
                 });
 
                 req.always(finishProcessing);
-            }, { scope: config.facebook.scope });
+            }, { scope: 'email, user_about_me, user_birthday, user_website, public_profile' });
         });
 
         // Google button
@@ -167,6 +157,168 @@ jQuery(function($) {
             );
         });
 
+        // Twitter button
+        btnTwitter.on('click', function() {
+            if (isBusy) {
+                return;
+            }
+
+            var width = 600,
+                height = 400,
+                left = (screen.width / 2) - (width / 2),
+                top = 100;
+
+            var popupUrl = '',
+                popupName = 'twitterLoginWindow',
+                popupOptions = 'width=' + width + ', height=' + height + ', left=' + left + ', top=' + top;
+
+            var popup = window.open(popupUrl, popupName, popupOptions);
+
+            twitterRequestToken()
+                .done(function(res) {
+                    var url = 'https://api.twitter.com/oauth/authenticate?oauth_token=' + res.token;
+                    popup.location.href = url;
+                    twitterPopupPolling(popup);
+                })
+                .fail(console.error);
+        });
+
+        // Get Twitter request token
+        function twitterRequestToken() {
+            var d = $.Deferred();
+
+            var req = $.ajax({
+                method: 'GET',
+                url: phlowAjax.url,
+                dataType: 'json',
+                data: {
+                    action: 'phlow_twitter_request_token'
+                }
+            });
+
+            req.done(d.resolve);
+            req.fail(d.reject);
+
+            return d.promise();
+        }
+
+        // Get Twitter access token
+        function twitterAccessToken(verifier, token) {
+            startProcessing();
+
+            var req = $.ajax({
+                method: 'GET',
+                url: phlowAjax.url,
+                dataType: 'json',
+                data: {
+                    action: 'phlow_twitter_access_token',
+                    verifier: verifier,
+                    token: token
+                }
+            });
+
+            req.done(function(res) {
+                if (res.success) {
+                    var secret = res.data.token_secret,
+                        token = res.data.token;
+
+                    twitterRegistration(token, secret);
+                }
+                else {
+                    console.error(res.errors);
+                }
+            });
+
+            req.fail(function(err) {
+                finishProcessing();
+                console.error(err);
+            });
+        }
+
+        // Twitter registration
+        function twitterRegistration(token, secret) {
+            var data = {
+                action: 'phlow_user_social_create',
+                twitterTokenSecret: secret,
+                twitterToken: token
+            };
+
+            if (tags) {
+                data.tags = tags;
+            }
+
+            var req = $.ajax({
+                method: 'POST',
+                url: phlowAjax.url,
+                dataType: 'json',
+                data: data
+            });
+
+            req.done(function(res) {
+                if (!res.success) {
+                    showErrors(res.errors);
+                    return;
+                }
+                showMessage();
+            });
+
+            req.fail(function(err) {
+                console.error(err);
+            });
+
+            req.always(finishProcessing);
+        }
+
+        // Twitter popup polling
+        function twitterPopupPolling(popup) {
+            var polling = setInterval(function() {
+                if (!popup || popup.closed || popup.closed === undefined) {
+                    clearInterval(polling);
+                    console.log('Popup has been closed by user');
+                }
+
+                var closeDialog = function() {
+                    clearInterval(polling);
+                    popup.close();
+                }
+
+                try {
+                    var host = popup.location.hostname;
+
+                    if (host.indexOf('api.twitter.com') === -1 && host != '') {
+                        var search = popup.location.search;
+
+                        if (search) {
+                            var queryString = search.substring(1),
+                                vars = queryString.split('&'),
+                                query = {};
+
+                            vars.forEach(function(item) {
+                                var pair = item.split('=');
+                                query[pair[0]] = pair[1];
+                            });
+
+                            var verifier = query.oauth_verifier,
+                                token = query.oauth_token;
+
+                            closeDialog();
+                            twitterAccessToken(verifier, token);
+                        }
+                        else {
+                            closeDialog();
+                            console.error(
+                                'OAuth redirect has occurred but no query or hash parameters were found. ' +
+                                'They were either not set during the redirect, or were removed—typically by a ' +
+                                'routing library—before Twitter react component could read it.'
+                            );
+                        }
+                    }
+                } catch(err) {
+                    // Ignore DOMException: Blocked a frame with origin from accessing a cross-origin frame
+                }
+            }, 500);
+        }
+
         function showErrors(errors) {
             errors.forEach(function(value) {
                 var item = $('<li />').text(value);
@@ -214,7 +366,7 @@ jQuery(function($) {
     // Facebook
     window.fbAsyncInit = function() {
         FB.init({
-            appId: config.facebook.appId,
+            appId: phlowAjax.facebook_app_id,
             autoLogAppEvents: true,
             xfbml: true,
             version: 'v2.10'
@@ -230,8 +382,8 @@ jQuery(function($) {
             }
 
             var params = {
-                client_id: config.google.clientId,
-                cookiepolicy: config.google.cookiePolicy
+                client_id: phlowAjax.google_client_id,
+                cookiepolicy: 'single_host_origin'
             };
 
             window.gapi.auth2.init(params).then(

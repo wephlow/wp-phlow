@@ -128,6 +128,11 @@
 	color: #fff;
 }
 
+.phlow-reg-buttons .phlow-reg-twitter {
+	background-color: #1da1f2;
+	color: #fff;
+}
+
 .phlow-reg-success {
 	box-shadow: 0 0 8px #e6e6e6;
     padding: 15px;

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: wp-phlow
  * Description: phlow allows you to embed a carousel or a widget of photographs relevant to a specific theme or context. Be it #wedding#gowns, #portraits#blackandwhite or #yoga, phlow provides you with images that are fresh and relevant. To get started, log through a phlow account (it is 100% free) and either embed the stream in your WYSIWYG editor or add a widget to your blog.
- * Version: 1.3.4
+ * Version: 1.3.5
  * Author: phlow
  * Author URI: http://phlow.com
  */
@@ -10,6 +10,9 @@
 define('PHLOW__PLUGIN_DIR', plugin_dir_path(__FILE__));
 require_once(PHLOW__PLUGIN_DIR . 'class.api.php');
 require_once(PHLOW__PLUGIN_DIR . 'BFIGitHubPluginUpdater.php');
+require_once(PHLOW__PLUGIN_DIR . 'libs/twitteroauth/autoload.php');
+
+use Abraham\TwitterOAuth\TwitterOAuth;
 
 class phlow {
 	protected $_plugin_id = 'wp-phlow';
@@ -55,6 +58,10 @@ class phlow {
         add_action('wp_ajax_phlow_user_create', array($this, 'phlow_ajax_create_user'));
         add_action('wp_ajax_nopriv_phlow_user_social_create', array($this, 'phlow_ajax_create_user_social'));
         add_action('wp_ajax_phlow_user_social_create', array($this, 'phlow_ajax_create_user_social'));
+        add_action('wp_ajax_nopriv_phlow_twitter_request_token', array($this, 'phlow_ajax_twitter_request_token'));
+        add_action('wp_ajax_phlow_twitter_request_token', array($this, 'phlow_ajax_twitter_request_token'));
+        add_action('wp_ajax_nopriv_phlow_twitter_access_token', array($this, 'phlow_ajax_twitter_access_token'));
+        add_action('wp_ajax_phlow_twitter_access_token', array($this, 'phlow_ajax_twitter_access_token'));
 	}
 
     public function addShortcodes()
@@ -89,7 +96,7 @@ class phlow {
         wp_enqueue_style('ph_css');
         wp_enqueue_style('phlow_shortcode', $this->_plugin_url .'/mce_plugin/css/mce-button.css' );
         wp_enqueue_style('phlow_autocomplete', $this->_plugin_url .'/css/autocomplete/easy-autocomplete.min.css');
-        wp_enqueue_style('phlow', $this->_plugin_url .'/css/phlow.css');
+        wp_enqueue_style('phlow', $this->_plugin_url .'/css/phlow.css?t=' . time());
 
         // scripts
         wp_register_script('ph_script', $this->_plugin_url .'/js/tipped/tipped.js', array('jquery'), null, false);
@@ -103,11 +110,13 @@ class phlow {
         wp_register_script('phlow_visible', $this->_plugin_url . '/js/jquery-visible/jquery.visible.min.js', array('jquery'), null, false);
         wp_enqueue_script('phlow_visible');
         wp_register_script('phlow_loader', $this->_plugin_url . '/js/loader.js', array('jquery'), null, false);
-        wp_register_script('phlow_registration', $this->_plugin_url . '/js/registration.js', array('jquery'), null, false);
+        wp_register_script('phlow_registration', $this->_plugin_url . '/js/registration.js?t='.time(), array('jquery'), null, false);
 
 		// js variables
 		wp_localize_script('phlow', 'phlowAjax', array(
-			'url' => $this->ajax_url
+			'url' => $this->ajax_url,
+			'facebook_app_id' => get_option('phlow_facebook_app_id'),
+			'google_client_id' => get_option('phlow_google_client_id')
 		));
     }
 
@@ -436,6 +445,7 @@ class phlow {
 				    <button class="phlow-reg-submit">Register</button>
                     <button class="phlow-reg-facebook">Sign up with Facebook</button>
                     <button class="phlow-reg-google">Sign up with Google</button>
+                    <button class="phlow-reg-twitter">Sign up with Twitter</button>
                 </div>
                 <div class="phlow-reg-loader">
                 	<div class="spin">
@@ -450,6 +460,7 @@ class phlow {
 
 	public function phlow_menu() {
 		add_submenu_page( 'options-general.php', 'phlow-settings', 'phlow', 'manage_options', 'phlow-settings.php', array($this, 'phlow_settings') );
+		add_submenu_page( 'options-general.php', 'phlow-auth', 'phlow', 'manage_options', 'phlow-auth.php', array($this, 'phlow_auth_settings') );
 	}
 
 	public function phlow_settings() {
@@ -721,6 +732,112 @@ class phlow {
 			<h1>' . __('phlow') . '</h1>
 			' . $tabs_html . '
 			' . $content . '
+		';
+	}
+
+	/**
+	 * phlow authentication settings
+	 */
+	public function phlow_auth_settings() {
+		$url = admin_url('options-general.php?page=phlow-auth.php');
+
+		// Save settings
+		if (isset($_POST['submit_auth_settings'])) {
+			$facebookAppId = $_POST['phlow_facebook_app_id'];
+			$facebookAppId = isset($facebookAppId) ? sanitize_text_field($facebookAppId) : '';
+			update_option('phlow_facebook_app_id', $facebookAppId);
+
+			$googleClientId = $_POST['phlow_google_client_id'];
+			$googleClientId = isset($googleClientId) ? sanitize_text_field($googleClientId) : '';
+			update_option('phlow_google_client_id', $googleClientId);
+
+			$twitterSecret = $_POST['phlow_twitter_consumer_secret'];
+			$twitterSecret = isset($twitterSecret) ? sanitize_text_field($twitterSecret) : '';
+			update_option('phlow_twitter_consumer_secret', $twitterSecret);
+
+			$twitterKey = $_POST['phlow_twitter_consumer_key'];
+			$twitterKey = isset($twitterKey) ? sanitize_text_field($twitterKey) : '';
+			update_option('phlow_twitter_consumer_key', $twitterKey);
+		}
+
+		echo '
+			<div class="wrap" style="margin-top:30px">
+				<h1>' . __('phlow authentication settings') . '</h1>
+				<form method="post" action="' . $url . '">
+					<h2 class="title" style="margin-bottom: 0;">' . __('Facebook') . '</h2>
+					<table class="form-table">
+						<tr>
+							<th>
+								<label>' . __('App ID') . '</label>
+							</th>
+							<td>
+								<input
+									type="text"
+									name="phlow_facebook_app_id"
+									class="regular-text"
+									value="' . get_option('phlow_facebook_app_id') . '"
+								/>
+							</td>
+						</tr>
+					</table>
+					<hr />
+					<h2 class="title" style="margin-bottom: 0;">' . __('Google') . '</h2>
+					<table class="form-table">
+						<tr>
+							<th>
+								<label>' . __('Client ID') . '</label>
+							</th>
+							<td>
+								<input
+									type="text"
+									name="phlow_google_client_id"
+									class="regular-text"
+									value="' . get_option('phlow_google_client_id') . '"
+								/>
+							</td>
+						</tr>
+					</table>
+					<hr />
+					<h2 class="title" style="margin-bottom: 0;">' . __('Twitter') . '</h2>
+					<table class="form-table">
+						<tr>
+							<th>
+								<label>' . __('Consumer Key') . '</label>
+							</th>
+							<td>
+								<input
+									type="text"
+									name="phlow_twitter_consumer_key"
+									class="regular-text"
+									value="' . get_option('phlow_twitter_consumer_key') . '"
+								/>
+							</td>
+						</tr>
+						<tr>
+							<th>
+								<label>' . __('Consumer Secret') . '</label>
+							</th>
+							<td>
+								<input
+									type="text"
+									name="phlow_twitter_consumer_secret"
+									class="regular-text"
+									value="' . get_option('phlow_twitter_consumer_secret') . '"
+								/>
+							</td>
+						</tr>
+					</table>
+					<hr />
+					<p class="submit">
+						<input
+							type="submit"
+							name="submit_auth_settings"
+							class="button button-primary"
+							value="' . __('Save Changes') . '"
+						/>
+					</p>
+				</form>
+			</div>
 		';
 	}
 
@@ -1387,6 +1504,16 @@ class phlow {
             $params['googleToken'] = trim($this->query['googleToken']);
         }
 
+        // Twitter tokens
+        if (isset($this->query['twitterTokenSecret']) &&
+        	isset($this->query['twitterToken']))
+        {
+        	$params['twitter'] = array(
+        		'token_secret' => trim($this->query['twitterTokenSecret']),
+        		'token' => trim($this->query['twitterToken'])
+    		);
+        }
+
         // Prepare favorite tags
         $tags = $this->query['tags'];
 
@@ -1436,6 +1563,79 @@ class phlow {
         }
 
         echo json_encode($response);
+        wp_die();
+    }
+
+    public function phlow_ajax_twitter_request_token() {
+    	$consumerSecret = get_option('phlow_twitter_consumer_secret');
+    	$consumerKey = get_option('phlow_twitter_consumer_key');
+
+    	$conn = new TwitterOAuth($consumerKey, $consumerSecret);
+    	$res = $conn->oauth('oauth/request_token', array(
+    		'oauth_callback' => get_site_url() . '/twitter/auth'
+    	));
+
+    	echo json_encode(array(
+    		'token' => $res['oauth_token']
+    	));
+        wp_die();
+    }
+
+    public function phlow_ajax_twitter_access_token() {
+    	$this->query = $_GET;
+		$errors = array();
+
+		// Validate oauth verifier
+		$verifier = $this->query['verifier'];
+
+		if (!isset($verifier) ||
+			strlen($verifier) > 32)
+		{
+			$errors[] = __('Invalid verifier parameter');
+		}
+		else {
+			$verifier = trim($this->query['verifier']);
+		}
+
+		// Validate oauth token
+		$token = $this->query['token'];
+
+		if (!isset($token) ||
+			strlen($token) > 32)
+		{
+			$errors[] = __('Invalid token parameter');
+		}
+		else {
+			$token = trim($this->query['token']);
+		}
+
+		// Check errors
+		if (count($errors)) {
+			$response = array(
+				'success' => false,
+				'errors' => $errors
+			);
+		}
+		else {
+			$consumerSecret = get_option('phlow_twitter_consumer_secret');
+    		$consumerKey = get_option('phlow_twitter_consumer_key');
+
+			$conn = new TwitterOAuth($consumerKey, $consumerSecret);
+	    	$res = $conn->oauth('oauth/access_token', array(
+	    		'oauth_verifier' => $verifier,
+	    		'oauth_token' => $token
+	    	));
+
+	    	$response = array(
+	    		'success' => true,
+	    		'data' => array(
+	    			'token_secret' => $res['oauth_token_secret'],
+	    			'token' => $res['oauth_token']
+    			)
+			);
+		}
+
+    	echo json_encode($response);
         wp_die();
     }
 
