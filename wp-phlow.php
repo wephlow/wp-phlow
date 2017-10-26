@@ -96,7 +96,7 @@ class phlow {
         wp_enqueue_style('ph_css');
         wp_enqueue_style('phlow_shortcode', $this->_plugin_url .'/mce_plugin/css/mce-button.css' );
         wp_enqueue_style('phlow_autocomplete', $this->_plugin_url .'/css/autocomplete/easy-autocomplete.min.css');
-        wp_enqueue_style('phlow', $this->_plugin_url .'/css/phlow.css?t=' . time());
+        wp_enqueue_style('phlow', $this->_plugin_url .'/css/phlow.css');
 
         // scripts
         wp_register_script('ph_script', $this->_plugin_url .'/js/tipped/tipped.js', array('jquery'), null, false);
@@ -110,7 +110,7 @@ class phlow {
         wp_register_script('phlow_visible', $this->_plugin_url . '/js/jquery-visible/jquery.visible.min.js', array('jquery'), null, false);
         wp_enqueue_script('phlow_visible');
         wp_register_script('phlow_loader', $this->_plugin_url . '/js/loader.js', array('jquery'), null, false);
-        wp_register_script('phlow_registration', $this->_plugin_url . '/js/registration.js?t='.time(), array('jquery'), null, false);
+        wp_register_script('phlow_registration', $this->_plugin_url . '/js/registration.js', array('jquery'), null, false);
 
 		// js variables
 		wp_localize_script('phlow', 'phlowAjax', array(
