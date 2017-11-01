@@ -12,6 +12,8 @@ jQuery(function($) {
             boxErrors = $('.phlow-reg-errors', widget),
             loader = $('.phlow-reg-loader', widget),
             tags = widget.data('tags'),
+            list = widget.data('list'),
+            group = widget.data('group'),
             isBusy = false;
 
         // Submit button
@@ -28,9 +30,9 @@ jQuery(function($) {
                 password: inputPasswd.val()
             };
 
-            if (tags) {
-                data.tags = tags;
-            }
+            if (tags) data.tags = tags;
+            if (list) data.list = list;
+            if (group) data.group = group;
 
             var req = $.ajax({
                 method: 'POST',
@@ -72,9 +74,9 @@ jQuery(function($) {
                     facebookToken: fbres.authResponse.accessToken
                 };
 
-                if (tags) {
-                    data.tags = tags;
-                }
+                if (tags) data.tags = tags;
+                if (list) data.list = list;
+                if (group) data.group = group;
 
                 var req = $.ajax({
                     method: 'POST',
@@ -126,9 +128,9 @@ jQuery(function($) {
                         googleToken: authResponse.access_token
                     };
 
-                    if (tags) {
-                        data.tags = tags;
-                    }
+                    if (tags) data.tags = tags;
+                    if (list) data.list = list;
+                    if (group) data.group = group;
 
                     var req = $.ajax({
                         method: 'POST',
@@ -243,9 +245,9 @@ jQuery(function($) {
                 twitterToken: token
             };
 
-            if (tags) {
-                data.tags = tags;
-            }
+            if (tags) data.tags = tags;
+            if (list) data.list = list;
+            if (group) data.group = group;
 
             var req = $.ajax({
                 method: 'POST',

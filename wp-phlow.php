@@ -418,13 +418,29 @@ class phlow {
 	public function shortcode_registration($atts) {
         wp_enqueue_script('phlow_registration');
 
-        $tags = $atts['tags'];
         $dataParams = array();
+
+        // Tags
+        $tags = $atts['tags'];
 
         if (isset($tags) && !empty($tags)) {
             $tags = preg_replace('/[^0-9a-zA-Z,:]/', '', $tags);
             $tags = strtolower($tags);
             $dataParams[] = 'data-tags=' . $tags;
+        }
+
+        // MailChimp list id
+        $list_id = $atts['list'];
+
+        if (isset($list_id) && !empty($list_id)) {
+        	$dataParams[] = 'data-list=' . sanitize_text_field($list_id);
+        }
+
+        // MailChimp group id
+        $group_id = $atts['group'];
+
+        if (isset($group_id) && !empty($group_id)) {
+        	$dataParams[] = 'data-group=' . sanitize_text_field($group_id);
         }
 
 		$widgetId = 'phlow_registration_' . (time() + rand(1, 1000));
@@ -460,7 +476,7 @@ class phlow {
 
 	public function phlow_menu() {
 		add_submenu_page( 'options-general.php', 'phlow-settings', 'phlow', 'manage_options', 'phlow-settings.php', array($this, 'phlow_settings') );
-		add_submenu_page( 'options-general.php', 'phlow-auth', 'phlow', 'manage_options', 'phlow-auth.php', array($this, 'phlow_auth_settings') );
+		add_submenu_page( 'options-general.php', 'phlow-auth', null, 'manage_options', 'phlow-auth.php', array($this, 'phlow_auth_settings') );
 	}
 
 	public function phlow_settings() {
@@ -758,6 +774,10 @@ class phlow {
 			$twitterKey = $_POST['phlow_twitter_consumer_key'];
 			$twitterKey = isset($twitterKey) ? sanitize_text_field($twitterKey) : '';
 			update_option('phlow_twitter_consumer_key', $twitterKey);
+
+			$mailchimpApiKey = $_POST['phlow_mailchimp_api_key'];
+			$mailchimpApiKey = isset($mailchimpApiKey) ? sanitize_text_field($mailchimpApiKey) : '';
+			update_option('phlow_mailchimp_api_key', $mailchimpApiKey);
 		}
 
 		echo '
@@ -823,6 +843,23 @@ class phlow {
 									name="phlow_twitter_consumer_secret"
 									class="regular-text"
 									value="' . get_option('phlow_twitter_consumer_secret') . '"
+								/>
+							</td>
+						</tr>
+					</table>
+					<hr />
+					<h2 class="title" style="margin-bottom: 0;">' . __('MailChimp') . '</h2>
+					<table class="form-table">
+						<tr>
+							<th>
+								<label>' . __('API Key') . '</label>
+							</th>
+							<td>
+								<input
+									type="text"
+									name="phlow_mailchimp_api_key"
+									class="regular-text"
+									value="' . get_option('phlow_mailchimp_api_key') . '"
 								/>
 							</td>
 						</tr>
@@ -1471,6 +1508,20 @@ class phlow {
             }
         }
 
+        // Prepare MailChimp list id
+        $list_id = $this->query['list'];
+
+        if (isset($list_id) && !empty($list_id)) {
+        	$list_id = sanitize_text_field($list_id);
+        }
+
+        // Prepare MailChimp interest id
+        $interest_id = $this->query['group'];
+
+        if (isset($interest_id) && !empty($interest_id)) {
+        	$interest_id = sanitize_text_field($interest_id);
+        }
+
         // Send request
         $req = $this->api->register($params);
 
@@ -1484,6 +1535,9 @@ class phlow {
             $response = array(
                 'success' => true
             );
+
+            // Add user to MailChimp
+        	$this->mailchimp_member_add($req->user->email, $list_id, $interest_id);
         }
 
         echo json_encode($response);
@@ -1540,7 +1594,24 @@ class phlow {
             }
         }
 
-        if (!isset($params['facebookToken']) && !isset($params['googleToken'])) {
+        // Prepare MailChimp list id
+        $list_id = $this->query['list'];
+
+        if (isset($list_id) && !empty($list_id)) {
+        	$list_id = sanitize_text_field($list_id);
+        }
+
+        // Prepare MailChimp interest id
+        $interest_id = $this->query['group'];
+
+        if (isset($interest_id) && !empty($interest_id)) {
+        	$interest_id = sanitize_text_field($interest_id);
+        }
+
+        if (!isset($params['facebookToken']) &&
+        	!isset($params['googleToken']) &&
+        	!isset($params['twitter']))
+        {
             $response = array(
                 'success' => false,
                 'errors' => array('Please provide access token')
@@ -1559,6 +1630,9 @@ class phlow {
                 $response = array(
                     'success' => true
                 );
+
+                // Add user to MailChimp
+        		$this->mailchimp_member_add($req->user->email, $list_id, $interest_id);
             }
         }
 
@@ -1637,6 +1711,42 @@ class phlow {
 
     	echo json_encode($response);
         wp_die();
+    }
+
+    /**
+     * Add a MailChimp new list member
+     */
+    private function mailchimp_member_add($email, $list_id, $interest_id) {
+    	if (!isset($email) || !isset($list_id)) {
+    		return null;
+    	}
+
+    	$api_key = get_option('phlow_mailchimp_api_key');
+    	$dc = substr($api_key, strpos($api_key, '-') + 1);
+    	$api_url = 'https://' . $dc . '.api.mailchimp.com/3.0';
+
+    	$body = array(
+    		'email_address' => $email,
+    		'status' => 'subscribed'
+    	);
+
+    	if (isset($interest_id) && !empty($interest_id)) {
+    		$body['interests'] = array();
+    		$body['interests'][$interest_id] = true;
+    	}
+
+    	$args = array(
+    		'method' => 'POST',
+    		'headers' => array(
+    			'Authorization' => 'Basic ' . base64_encode('user:' . $api_key)
+    		),
+    		'body' => json_encode($body)
+    	);
+
+    	$req = wp_remote_post($api_url . '/lists/' . $list_id . '/members', $args);
+    	$res = json_decode(wp_remote_retrieve_body($req));
+
+    	return $res;
     }
 
 	public function admin_head() {
