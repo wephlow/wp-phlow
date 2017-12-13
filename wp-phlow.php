@@ -9,6 +9,7 @@
 
 define('PHLOW__PLUGIN_DIR', plugin_dir_path(__FILE__));
 require_once(PHLOW__PLUGIN_DIR . 'class.api.php');
+require_once(PHLOW__PLUGIN_DIR . 'class.mailchimp.php');
 require_once(PHLOW__PLUGIN_DIR . 'BFIGitHubPluginUpdater.php');
 require_once(PHLOW__PLUGIN_DIR . 'libs/twitteroauth/autoload.php');
 
@@ -28,6 +29,7 @@ class phlow {
 		$this->_plugin_url = get_site_url(null, 'wp-content/plugins/' . basename($this->_plugin_dir));
 		$this->ajax_url = admin_url('admin-ajax.php');
 		$this->api = api::getInstance();
+		$this->mailchimp = mailchimp::getInstance();
 	}
 
 	protected function addActions() {
@@ -56,6 +58,8 @@ class phlow {
         add_action('wp_ajax_phlow_photo_seen', array($this, 'phlow_ajax_photo_seen'));
         add_action('wp_ajax_nopriv_phlow_user_create', array($this, 'phlow_ajax_create_user'));
         add_action('wp_ajax_phlow_user_create', array($this, 'phlow_ajax_create_user'));
+        add_action('wp_ajax_nopriv_phlow_user_login', array($this, 'phlow_ajax_login_user'));
+        add_action('wp_ajax_phlow_user_login', array($this, 'phlow_ajax_login_user'));
         add_action('wp_ajax_nopriv_phlow_user_social_create', array($this, 'phlow_ajax_create_user_social'));
         add_action('wp_ajax_phlow_user_social_create', array($this, 'phlow_ajax_create_user_social'));
         add_action('wp_ajax_nopriv_phlow_twitter_request_token', array($this, 'phlow_ajax_twitter_request_token'));
@@ -450,23 +454,29 @@ class phlow {
 
 		echo '
 			<div id="' . $widgetId . '" ' . $dataParams . ' class="phlow-reg">
-                <ul class="phlow-reg-errors"></ul>
-				<div class="field-block">
-					<input type="text" placeholder="Email" class="phlow-reg-email" />
-				</div>
-				<div class="field-block">
-					<input type="password" placeholder="Password" class="phlow-reg-passwd" />
-				</div>
-                <div class="phlow-reg-buttons">
-				    <button class="phlow-reg-submit">Register</button>
-                    <button class="phlow-reg-facebook">Sign up with Facebook</button>
-                    <button class="phlow-reg-google">Sign up with Google</button>
-                    <button class="phlow-reg-twitter">Sign up with Twitter</button>
-                </div>
-                <div class="phlow-reg-loader">
-                	<div class="spin">
-                    	<svg width="32px" height="32px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid"><rect x="0" y="0" width="100" height="100" fill="none"></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(0 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(30 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.08333333333333333s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(60 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.16666666666666666s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(90 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.25s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(120 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.3333333333333333s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(150 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.4166666666666667s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(180 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.5s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(210 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.5833333333333334s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(240 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.6666666666666666s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(270 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.75s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(300 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.8333333333333334s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(330 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.9166666666666666s" repeatCount="indefinite"/></rect></svg>
-                    </div>
+                <ul class="phlow-reg-tabs">
+                	<li data-tab="register" class="active">Register</li>
+                	<li data-tab="login">Already have account</li>
+                </ul>
+                <div class="phlow-reg-box">
+                	<ul class="phlow-reg-errors"></ul>
+					<div class="field-block">
+						<input type="text" placeholder="Email" class="phlow-reg-email" />
+					</div>
+					<div class="field-block">
+						<input type="password" placeholder="Password" class="phlow-reg-passwd" />
+					</div>
+	                <div class="phlow-reg-buttons">
+					    <button class="phlow-reg-submit">Register</button>
+	                    <button class="phlow-reg-facebook">Sign up with Facebook</button>
+	                    <button class="phlow-reg-google">Sign up with Google</button>
+	                    <button class="phlow-reg-twitter">Sign up with Twitter</button>
+	                </div>
+	                <div class="phlow-reg-loader">
+	                	<div class="spin">
+	                    	<svg width="32px" height="32px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid"><rect x="0" y="0" width="100" height="100" fill="none"></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(0 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(30 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.08333333333333333s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(60 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.16666666666666666s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(90 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.25s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(120 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.3333333333333333s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(150 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.4166666666666667s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(180 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.5s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(210 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.5833333333333334s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(240 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.6666666666666666s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(270 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.75s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(300 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.8333333333333334s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(330 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.9166666666666666s" repeatCount="indefinite"/></rect></svg>
+	                    </div>
+	                </div>
                 </div>
 			</div>
 		';
@@ -1508,6 +1518,13 @@ class phlow {
             }
         }
 
+        // Prepare referral code
+        $referralCode = $this->query['referralcode'];
+
+        if (isset($referralCode) && !empty($referralCode)) {
+        	$params['invitationCode'] = $referralCode;
+        }
+
         // Prepare MailChimp list id
         $list_id = $this->query['list'];
 
@@ -1537,7 +1554,7 @@ class phlow {
             );
 
             // Add user to MailChimp
-        	$this->mailchimp_member_add($req->user->email, $list_id, $interest_id);
+        	$this->mailchimp->addMember($req->user->email, $list_id, $interest_id);
         }
 
         echo json_encode($response);
@@ -1594,6 +1611,13 @@ class phlow {
             }
         }
 
+        // Prepare referral code
+        $referralCode = $this->query['referralcode'];
+
+        if (isset($referralCode) && !empty($referralCode)) {
+        	$params['invitationCode'] = $referralCode;
+        }
+
         // Prepare MailChimp list id
         $list_id = $this->query['list'];
 
@@ -1632,8 +1656,63 @@ class phlow {
                 );
 
                 // Add user to MailChimp
-        		$this->mailchimp_member_add($req->user->email, $list_id, $interest_id);
+        		$this->mailchimp->addMember($req->user->email, $list_id, $interest_id);
             }
+        }
+
+        echo json_encode($response);
+        wp_die();
+    }
+
+    public function phlow_ajax_login_user() {
+        $this->query = $_POST;
+
+        $params = array(
+            'email' => trim($this->query['email'])
+        );
+
+        // Prepare password
+        $password = $this->query['password'];
+
+        if (isset($password) && !empty($password)) {
+            $password = hash('sha256', $password);
+        }
+        else {
+            $password = '';
+        }
+
+        $params['password'] = $password;
+
+        // Prepare MailChimp list id
+        $list_id = $this->query['list'];
+
+        if (isset($list_id) && !empty($list_id)) {
+        	$list_id = sanitize_text_field($list_id);
+        }
+
+        // Prepare MailChimp interest id
+        $interest_id = $this->query['group'];
+
+        if (isset($interest_id) && !empty($interest_id)) {
+        	$interest_id = sanitize_text_field($interest_id);
+        }
+
+        // Send request
+        $req = $this->api->login($params);
+
+        if (isset($req->status) && $req->status != 200) {
+            $response = array(
+                'success' => false,
+                'errors' => array($req->message)
+            );
+        }
+        else {
+            $response = array(
+                'success' => true
+            );
+
+            // Add user to MailChimp
+        	$this->mailchimp->addMember($req->user->email, $list_id, $interest_id);
         }
 
         echo json_encode($response);
@@ -1711,42 +1790,6 @@ class phlow {
 
     	echo json_encode($response);
         wp_die();
-    }
-
-    /**
-     * Add a MailChimp new list member
-     */
-    private function mailchimp_member_add($email, $list_id, $interest_id) {
-    	if (!isset($email) || !isset($list_id)) {
-    		return null;
-    	}
-
-    	$api_key = get_option('phlow_mailchimp_api_key');
-    	$dc = substr($api_key, strpos($api_key, '-') + 1);
-    	$api_url = 'https://' . $dc . '.api.mailchimp.com/3.0';
-
-    	$body = array(
-    		'email_address' => $email,
-    		'status' => 'subscribed'
-    	);
-
-    	if (isset($interest_id) && !empty($interest_id)) {
-    		$body['interests'] = array();
-    		$body['interests'][$interest_id] = true;
-    	}
-
-    	$args = array(
-    		'method' => 'POST',
-    		'headers' => array(
-    			'Authorization' => 'Basic ' . base64_encode('user:' . $api_key)
-    		),
-    		'body' => json_encode($body)
-    	);
-
-    	$req = wp_remote_post($api_url . '/lists/' . $list_id . '/members', $args);
-    	$res = json_decode(wp_remote_retrieve_body($req));
-
-    	return $res;
     }
 
 	public function admin_head() {

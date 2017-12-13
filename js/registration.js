@@ -74,6 +74,12 @@ jQuery(function($) {
             if (list) data.list = list;
             if (group) data.group = group;
 
+            // Get referral code
+            var queryString = parseQueryString(location.search);
+            if (queryString.referralCode) {
+                data.referralcode = queryString.referralCode;
+            }
+
             var req = $.ajax({
                 method: 'POST',
                 url: phlowAjax.url,
@@ -117,6 +123,12 @@ jQuery(function($) {
                 if (tags) data.tags = tags;
                 if (list) data.list = list;
                 if (group) data.group = group;
+
+                // Get referral code
+                var queryString = parseQueryString(location.search);
+                if (queryString.referralCode) {
+                    data.referralcode = queryString.referralCode;
+                }
 
                 var req = $.ajax({
                     method: 'POST',
@@ -171,6 +183,12 @@ jQuery(function($) {
                     if (tags) data.tags = tags;
                     if (list) data.list = list;
                     if (group) data.group = group;
+
+                    // Get referral code
+                    var queryString = parseQueryString(location.search);
+                    if (queryString.referralCode) {
+                        data.referralcode = queryString.referralCode;
+                    }
 
                     var req = $.ajax({
                         method: 'POST',
@@ -288,6 +306,12 @@ jQuery(function($) {
             if (tags) data.tags = tags;
             if (list) data.list = list;
             if (group) data.group = group;
+
+            // Get referral code
+            var queryString = parseQueryString(location.search);
+            if (queryString.referralCode) {
+                data.referralcode = queryString.referralCode;
+            }
 
             var req = $.ajax({
                 method: 'POST',
@@ -408,6 +432,17 @@ jQuery(function($) {
     }
 
     widgetsInit();
+
+    // Parsing query string
+    function parseQueryString(url) {
+        var urlParams = {};
+
+        url.replace(new RegExp("([^?=&]+)(=([^&]*))?", "g"), function($0, $1, $2, $3) {
+            urlParams[$1] = $3;
+        });
+
+        return urlParams;
+    }
 
     // Facebook
     window.fbAsyncInit = function() {
