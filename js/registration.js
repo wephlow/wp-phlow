@@ -3,7 +3,9 @@ jQuery(function($) {
     function widgetInit() {
         var widget = this;
 
-        var inputEmail = $('.phlow-reg-email', widget),
+        var tabs = $('.phlow-reg-tabs li', widget),
+            isLoginTab = false,
+            inputEmail = $('.phlow-reg-email', widget),
             inputPasswd = $('.phlow-reg-passwd', widget),
             btnSubmit = $('.phlow-reg-submit', widget),
             btnFacebook = $('.phlow-reg-facebook', widget),
@@ -16,6 +18,44 @@ jQuery(function($) {
             group = widget.data('group'),
             isBusy = false;
 
+        var buttonsText = {
+            register: {
+                default: 'Register',
+                facebook: 'Sign up with Facebook',
+                google: 'Sign up with Google',
+                twitter: 'Sign up with Twitter'
+            },
+            login: {
+                default: 'Login',
+                facebook: 'Sign in with Facebook',
+                google: 'Sign in with Google',
+                twitter: 'Sign in with Twitter'
+            }
+        };
+
+        // Tabs init
+        tabs.on('click', function() {
+            var tab = $(this),
+                currentTab = tab.data('tab'),
+                activeClass = 'active';
+
+            isLoginTab = (currentTab === 'login');
+
+            // Hide errors
+            boxErrors.empty().hide();
+
+            // Set active tab
+            tabs.removeClass(activeClass);
+            tab.addClass(activeClass);
+
+            // Set buttons text
+            var texts = buttonsText[currentTab];
+            btnSubmit.text(texts.default);
+            btnFacebook.text(texts.facebook);
+            btnGoogle.text(texts.google);
+            btnTwitter.text(texts.twitter);
+        });
+
         // Submit button
         btnSubmit.on('click', function() {
             if (isBusy) {
@@ -25,7 +65,7 @@ jQuery(function($) {
             startProcessing();
 
             var data = {
-                action: 'phlow_user_create',
+                action: isLoginTab ? 'phlow_user_login' : 'phlow_user_create',
                 email: inputEmail.val(),
                 password: inputPasswd.val()
             };
@@ -331,9 +371,13 @@ jQuery(function($) {
         }
 
         function showMessage() {
+            var message = isLoginTab
+                ? 'You have been successfully logged in phlow'
+                : 'Thanks for registering to phlow. Please check your email for the next step';
+
             var boxSuccess = $('<div />')
                 .addClass('phlow-reg-success')
-                .text('Thanks for registering to phlow. Please check your email for the next step');
+                .text(message);
 
             widget.html(boxSuccess);
         }

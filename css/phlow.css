@@ -30,6 +30,46 @@
 	box-sizing: border-box;
 }
 
+.phlow-reg-box {
+	padding: 20px 20px 5px;
+	border: 1px solid #e4e5e7;
+	border-top: 0;
+}
+
+.phlow-reg-tabs {
+	margin: 0;
+	border-bottom: 1px solid #e4e5e7;
+	font-size: 14px;
+}
+
+.phlow-reg-tabs:after {
+	display: table;
+	content: " ";
+	clear: both;
+}
+
+.phlow-reg-tabs li {
+	display: block;
+	float: left;
+	list-style: none;
+	padding: 10px 15px;
+	line-height: 1.5;
+	border: 1px solid transparent;
+	background-color: #fff;
+	color: #3b5998;
+	cursor: pointer;
+}
+
+.phlow-reg-tabs li.active {
+	margin-bottom: -1px;
+	padding-bottom: 11px;
+	border: 1px solid #e4e5e7;
+	border-bottom-color: transparent;
+	border-radius: 4px 4px 0 0;
+	color: inherit;
+	cursor: default;
+}
+
 .phlow-reg .field-block {
 	margin-bottom: 15px;
 }
@@ -91,6 +131,7 @@
 	margin: 0 0 1em;
 	list-style-position: inside;
 	color: #e94033;
+	font-size: 14px;
 }
 
 .phlow-reg-buttons button {

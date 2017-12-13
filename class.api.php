@@ -133,6 +133,10 @@ class api {
 		return $time;
 	}
 
+	public function login($data = null) {
+		return $this->signedRequest('POST', '/auth', $data, false, false);
+	}
+
     public function register($data = null) {
         return $this->signedRequest('POST', '/users', $data, false, false);
     }
