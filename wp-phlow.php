@@ -12,6 +12,7 @@ require_once(PHLOW__PLUGIN_DIR . 'class.api.php');
 require_once(PHLOW__PLUGIN_DIR . 'class.mailchimp.php');
 require_once(PHLOW__PLUGIN_DIR . 'BFIGitHubPluginUpdater.php');
 require_once(PHLOW__PLUGIN_DIR . 'libs/twitteroauth/autoload.php');
+require_once(PHLOW__PLUGIN_DIR . 'libs/ssga/ss-ga.class.php');
 
 use Abraham\TwitterOAuth\TwitterOAuth;
 
@@ -30,6 +31,7 @@ class phlow {
 		$this->ajax_url = admin_url('admin-ajax.php');
 		$this->api = api::getInstance();
 		$this->mailchimp = mailchimp::getInstance();
+		$this->ssga = new ssga(get_option('phlow_google_analytics_ua'));
 	}
 
 	protected function addActions() {
@@ -70,12 +72,11 @@ class phlow {
 
     public function addShortcodes()
     {
-        add_shortcode('phlow_registration', array($this, 'shortcode_registration'));
-
         if(get_option('phlow_clientPublicKey') != null || get_option('phlow_clientPublicKey') != '' ){
             add_shortcode('phlow_stream', array($this, 'shortcode_phlow_page'));
             add_shortcode('phlow_group', array($this, 'shortcode_groups_image'));
             add_shortcode('phlow_line', array($this, 'shortcode_line_images'));
+            add_shortcode('phlow_registration', array($this, 'shortcode_registration'));
         }
     }
 
@@ -803,6 +804,10 @@ class phlow {
 			$mailchimpApiKey = $_POST['phlow_mailchimp_api_key'];
 			$mailchimpApiKey = isset($mailchimpApiKey) ? sanitize_text_field($mailchimpApiKey) : '';
 			update_option('phlow_mailchimp_api_key', $mailchimpApiKey);
+
+			$googleAnalyticsUA = $_POST['phlow_google_analytics_ua'];
+			$googleAnalyticsUA = isset($googleAnalyticsUA) ? sanitize_text_field($googleAnalyticsUA) : '';
+			update_option('phlow_google_analytics_ua', $googleAnalyticsUA);
 		}
 
 		echo '
@@ -885,6 +890,23 @@ class phlow {
 									name="phlow_mailchimp_api_key"
 									class="regular-text"
 									value="' . get_option('phlow_mailchimp_api_key') . '"
+								/>
+							</td>
+						</tr>
+					</table>
+					<hr />
+					<h2 class="title" style="margin-bottom: 0;">' . __('Google Analytics') . '</h2>
+					<table class="form-table">
+						<tr>
+							<th>
+								<label>' . __('UA-XXXXX-Y') . '</label>
+							</th>
+							<td>
+								<input
+									type="text"
+									name="phlow_google_analytics_ua"
+									class="regular-text"
+									value="' . get_option('phlow_google_analytics_ua') . '"
 								/>
 							</td>
 						</tr>
@@ -1272,6 +1294,30 @@ class phlow {
 		return $html;
 	}
 
+	public function phlow_ga_send_register_event($data) {
+		if (!is_array($data)) {
+			return;
+		}
+
+		if (!isset($data['utm_campaign']) ||
+			!isset($data['utm_content']) ||
+			!isset($data['utm_source']) ||
+			!isset($data['utm_medium']) ||
+			!isset($data['utm_term']))
+		{
+			return;
+		}
+
+		$label = 'utm_source=' . $data['utm_source'] . '&' .
+			'utm_medium=' . $data['utm_medium'] . '&' .
+			'utm_campaign=' . $data['utm_campaign'] . '&' .
+			'utm_term=' . $data['utm_term'] . '&' .
+			'utm_content=' . $data['utm_content'];
+
+		$this->ssga->set_event('phlow', 'register', $label);
+        $this->ssga->send();
+	}
+
 	public function phlow_ajax_get_type() {
 		$this->query = $_GET;
 		$type = $this->query['type'];
@@ -1565,11 +1611,15 @@ class phlow {
         	wp_die();
         }
 
+        // Send GA event
+        $ga_data = $this->query['ga'];
+        $this->phlow_ga_send_register_event($ga_data);
+
         // Set private and public keys
         $this->api->setKeys($req->privateKey, $req->publicKey);
 
         // Get user's data
-        $reqMe = $this->api->me(true);
+        $req_me = $this->api->me(true);
 
         // Prepare MailChimp merge fields
         $field_name = $this->query['field'];
@@ -1577,7 +1627,7 @@ class phlow {
 
         if (isset($field_name) && !empty($field_name)) {
         	$field_name = sanitize_text_field($field_name);
-    		$merge_fields[$field_name] = $reqMe->meta->invitationCode;
+    		$merge_fields[$field_name] = $req_me->meta->invitationCode;
         }
 
         // Add user to MailChimp
@@ -1682,11 +1732,15 @@ class phlow {
         	wp_die();
         }
 
+        // Send GA event
+        $ga_data = $this->query['ga'];
+        $this->phlow_ga_send_register_event($ga_data);
+
         // Set private and public keys
         $this->api->setKeys($req->privateKey, $req->publicKey);
 
         // Get user's data
-        $reqMe = $this->api->me(true);
+        $req_me = $this->api->me(true);
 
         // Prepare MailChimp merge fields
         $field_name = $this->query['field'];
@@ -1694,7 +1748,7 @@ class phlow {
 
         if (isset($field_name) && !empty($field_name)) {
         	$field_name = sanitize_text_field($field_name);
-    		$merge_fields[$field_name] = $reqMe->meta->invitationCode;
+    		$merge_fields[$field_name] = $req_me->meta->invitationCode;
         }
 
         // Add user to MailChimp
@@ -1761,7 +1815,7 @@ class phlow {
         $this->api->setKeys($req->privateKey, $req->publicKey);
 
         // Get user's data
-        $reqMe = $this->api->me(true);
+        $req_me = $this->api->me(true);
 
         // Prepare MailChimp merge fields
         $field_name = $this->query['field'];
@@ -1769,7 +1823,7 @@ class phlow {
 
         if (isset($field_name) && !empty($field_name)) {
         	$field_name = sanitize_text_field($field_name);
-    		$merge_fields[$field_name] = $reqMe->meta->invitationCode;
+    		$merge_fields[$field_name] = $req_me->meta->invitationCode;
         }
 
         // Add user to MailChimp

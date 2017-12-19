@@ -83,6 +83,10 @@ jQuery(function($) {
                 data.referralcode = queryString.referralCode;
             }
 
+            // Google Analytics data
+            var gaData = getGaParams();
+            if (gaData) data.ga = gaData;
+
             var req = $.ajax({
                 method: 'POST',
                 url: phlowAjax.url,
@@ -134,6 +138,10 @@ jQuery(function($) {
                 if (queryString.referralCode) {
                     data.referralcode = queryString.referralCode;
                 }
+
+                // Google Analytics data
+                var gaData = getGaParams();
+                if (gaData) data.ga = gaData;
 
                 var req = $.ajax({
                     method: 'POST',
@@ -196,6 +204,10 @@ jQuery(function($) {
                     if (queryString.referralCode) {
                         data.referralcode = queryString.referralCode;
                     }
+
+                    // Google Analytics data
+                    var gaData = getGaParams();
+                    if (gaData) data.ga = gaData;
 
                     var req = $.ajax({
                         method: 'POST',
@@ -321,6 +333,10 @@ jQuery(function($) {
             if (queryString.referralCode) {
                 data.referralcode = queryString.referralCode;
             }
+
+            // Google Analytics data
+            var gaData = getGaParams();
+            if (gaData) data.ga = gaData;
 
             var req = $.ajax({
                 method: 'POST',
@@ -458,6 +474,34 @@ jQuery(function($) {
         });
 
         return urlParams;
+    }
+
+    // Receiving GA parameters from URL
+    function getGaParams() {
+        var queryString = parseQueryString(location.search),
+            data = {};
+
+        if (queryString.utm_source) {
+            data.utm_source = queryString.utm_source;
+        }
+
+        if (queryString.utm_medium) {
+            data.utm_medium = queryString.utm_medium;
+        }
+
+        if (queryString.utm_campaign) {
+            data.utm_campaign = queryString.utm_campaign;
+        }
+
+        if (queryString.utm_term) {
+            data.utm_term = queryString.utm_term;
+        }
+
+        if (queryString.utm_content) {
+            data.utm_content = queryString.utm_content;
+        }
+
+        return Object.keys(data).length ? data : null;
     }
 
     // Facebook
