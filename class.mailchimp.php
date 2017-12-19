@@ -35,7 +35,7 @@ class mailchimp {
     	return $res;
 	}
 
-	public function addMember($email, $listId, $interestId) {
+	public function addMember($email, $listId, $interestId, $mergeFields) {
 		if (!isset($email) || !isset($listId)) {
     		return null;
     	}
@@ -50,6 +50,10 @@ class mailchimp {
     	if (isset($interestId) && !empty($interestId)) {
     		$body['interests'] = array();
     		$body['interests'][$interestId] = true;
+    	}
+
+    	if (isset($mergeFields) && !empty($mergeFields)) {
+    		$body['merge_fields'] = $mergeFields;
     	}
 
     	return $this->sendRequest('POST', $endpoint, $body);

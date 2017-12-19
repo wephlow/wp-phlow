@@ -145,8 +145,8 @@ class api {
         return $this->signedRequest('POST', '/users/social', $data, false, false);
     }
 
-	public function me() {
-		return $this->signedRequest('GET', '/users/me');
+	public function me($isReader = false) {
+		return $this->signedRequest('GET', '/users/me', null, $isReader);
 	}
 
 	public function userMagazines($userId) {

@@ -16,6 +16,8 @@ jQuery(function($) {
             tags = widget.data('tags'),
             list = widget.data('list'),
             group = widget.data('group'),
+            field = widget.data('field'),
+            redirection = widget.data('redirection'),
             isBusy = false;
 
         var buttonsText = {
@@ -73,6 +75,7 @@ jQuery(function($) {
             if (tags) data.tags = tags;
             if (list) data.list = list;
             if (group) data.group = group;
+            if (field) data.field = field;
 
             // Get referral code
             var queryString = parseQueryString(location.search);
@@ -93,6 +96,7 @@ jQuery(function($) {
                     return;
                 }
                 showMessage();
+                redirect();
             });
 
             req.fail(function(err) {
@@ -123,6 +127,7 @@ jQuery(function($) {
                 if (tags) data.tags = tags;
                 if (list) data.list = list;
                 if (group) data.group = group;
+                if (field) data.field = field;
 
                 // Get referral code
                 var queryString = parseQueryString(location.search);
@@ -143,6 +148,7 @@ jQuery(function($) {
                         return;
                     }
                     showMessage();
+                    redirect();
                 });
 
                 req.fail(function(err) {
@@ -183,6 +189,7 @@ jQuery(function($) {
                     if (tags) data.tags = tags;
                     if (list) data.list = list;
                     if (group) data.group = group;
+                    if (field) data.field = field;
 
                     // Get referral code
                     var queryString = parseQueryString(location.search);
@@ -203,6 +210,7 @@ jQuery(function($) {
                             return;
                         }
                         showMessage();
+                        redirect();
                     });
 
                     req.fail(function(err) {
@@ -306,6 +314,7 @@ jQuery(function($) {
             if (tags) data.tags = tags;
             if (list) data.list = list;
             if (group) data.group = group;
+            if (field) data.field = field;
 
             // Get referral code
             var queryString = parseQueryString(location.search);
@@ -326,6 +335,7 @@ jQuery(function($) {
                     return;
                 }
                 showMessage();
+                redirect();
             });
 
             req.fail(function(err) {
@@ -415,6 +425,12 @@ jQuery(function($) {
         function finishProcessing() {
             isBusy = false;
             loader.hide();
+        }
+
+        function redirect() {
+            if (redirection) {
+                window.location = redirection;
+            }
         }
     }
 

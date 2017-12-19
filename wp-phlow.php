@@ -70,11 +70,12 @@ class phlow {
 
     public function addShortcodes()
     {
+        add_shortcode('phlow_registration', array($this, 'shortcode_registration'));
+
         if(get_option('phlow_clientPublicKey') != null || get_option('phlow_clientPublicKey') != '' ){
             add_shortcode('phlow_stream', array($this, 'shortcode_phlow_page'));
             add_shortcode('phlow_group', array($this, 'shortcode_groups_image'));
             add_shortcode('phlow_line', array($this, 'shortcode_line_images'));
-            add_shortcode('phlow_registration', array($this, 'shortcode_registration'));
         }
     }
 
@@ -445,6 +446,20 @@ class phlow {
 
         if (isset($group_id) && !empty($group_id)) {
         	$dataParams[] = 'data-group=' . sanitize_text_field($group_id);
+        }
+
+        // MailChimp merge field
+        $merge_field = $atts['referralcode'];
+
+        if (isset($merge_field) && !empty($merge_field)) {
+        	$dataParams[] = 'data-field=' . sanitize_text_field($merge_field);
+        }
+
+        // Redirect URL
+        $redirect_url = $atts['redirection'];
+
+        if (isset($redirect_url) && !empty($redirect_url)) {
+        	$dataParams[] = 'data-redirection=' . sanitize_text_field($redirect_url);
         }
 
 		$widgetId = 'phlow_registration_' . (time() + rand(1, 1000));
@@ -1539,25 +1554,38 @@ class phlow {
         	$interest_id = sanitize_text_field($interest_id);
         }
 
-        // Send request
+        // Register user
         $req = $this->api->register($params);
 
         if (isset($req->status) && $req->status != 200) {
-            $response = array(
-                'success' => false,
-                'errors' => array($req->message)
-            );
-        }
-        else {
-            $response = array(
-                'success' => true
-            );
-
-            // Add user to MailChimp
-        	$this->mailchimp->addMember($req->user->email, $list_id, $interest_id);
+        	echo json_encode(array(
+        		'success' => false,
+        		'errors' => array($req->message)
+        	));
+        	wp_die();
         }
 
-        echo json_encode($response);
+        // Set private and public keys
+        $this->api->setKeys($req->privateKey, $req->publicKey);
+
+        // Get user's data
+        $reqMe = $this->api->me(true);
+
+        // Prepare MailChimp merge fields
+        $field_name = $this->query['field'];
+        $merge_fields = array();
+
+        if (isset($field_name) && !empty($field_name)) {
+        	$field_name = sanitize_text_field($field_name);
+    		$merge_fields[$field_name] = $reqMe->meta->invitationCode;
+        }
+
+        // Add user to MailChimp
+        $this->mailchimp->addMember($req->user->email, $list_id, $interest_id, $merge_fields);
+
+        echo json_encode(array(
+        	'success' => true
+        ));
         wp_die();
     }
 
@@ -1636,31 +1664,45 @@ class phlow {
         	!isset($params['googleToken']) &&
         	!isset($params['twitter']))
         {
-            $response = array(
+            echo json_encode(array(
                 'success' => false,
                 'errors' => array('Please provide access token')
-            );
-        }
-        else {
-            $req = $this->api->registerSocial($params);
-
-            if (isset($req->status) && $req->status != 200) {
-                $response = array(
-                    'success' => false,
-                    'errors' => array($req->message)
-                );
-            }
-            else {
-                $response = array(
-                    'success' => true
-                );
-
-                // Add user to MailChimp
-        		$this->mailchimp->addMember($req->user->email, $list_id, $interest_id);
-            }
+            ));
+            wp_die();
         }
 
-        echo json_encode($response);
+        // Create/login via social account
+        $req = $this->api->registerSocial($params);
+
+        if (isset($req->status) && $req->status != 200) {
+        	echo json_encode(array(
+        		'success' => false,
+        		'errors' => array($req->message)
+        	));
+        	wp_die();
+        }
+
+        // Set private and public keys
+        $this->api->setKeys($req->privateKey, $req->publicKey);
+
+        // Get user's data
+        $reqMe = $this->api->me(true);
+
+        // Prepare MailChimp merge fields
+        $field_name = $this->query['field'];
+        $merge_fields = array();
+
+        if (isset($field_name) && !empty($field_name)) {
+        	$field_name = sanitize_text_field($field_name);
+    		$merge_fields[$field_name] = $reqMe->meta->invitationCode;
+        }
+
+        // Add user to MailChimp
+        $this->mailchimp->addMember($req->user->email, $list_id, $interest_id, $merge_fields);
+
+        echo json_encode(array(
+        	'success' => true
+        ));
         wp_die();
     }
 
@@ -1683,6 +1725,13 @@ class phlow {
 
         $params['password'] = $password;
 
+        // Prepare referral code
+        $referralCode = $this->query['referralcode'];
+
+        if (isset($referralCode) && !empty($referralCode)) {
+        	$params['invitationCode'] = $referralCode;
+        }
+
         // Prepare MailChimp list id
         $list_id = $this->query['list'];
 
@@ -1697,25 +1746,38 @@ class phlow {
         	$interest_id = sanitize_text_field($interest_id);
         }
 
-        // Send request
+        // Login user
         $req = $this->api->login($params);
 
         if (isset($req->status) && $req->status != 200) {
-            $response = array(
-                'success' => false,
-                'errors' => array($req->message)
-            );
-        }
-        else {
-            $response = array(
-                'success' => true
-            );
-
-            // Add user to MailChimp
-        	$this->mailchimp->addMember($req->user->email, $list_id, $interest_id);
+        	echo json_encode(array(
+        		'success' => false,
+        		'errors' => array($req->message)
+        	));
+        	wp_die();
         }
 
-        echo json_encode($response);
+        // Set private and public keys
+        $this->api->setKeys($req->privateKey, $req->publicKey);
+
+        // Get user's data
+        $reqMe = $this->api->me(true);
+
+        // Prepare MailChimp merge fields
+        $field_name = $this->query['field'];
+        $merge_fields = array();
+
+        if (isset($field_name) && !empty($field_name)) {
+        	$field_name = sanitize_text_field($field_name);
+    		$merge_fields[$field_name] = $reqMe->meta->invitationCode;
+        }
+
+        // Add user to MailChimp
+        $this->mailchimp->addMember($req->user->email, $list_id, $interest_id, $merge_fields);
+
+        echo json_encode(array(
+        	'success' => true
+        ));
         wp_die();
     }
 
