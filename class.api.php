@@ -162,12 +162,12 @@ class api {
 	}
 
 	public function streams($queryString, $owned=false) {
-	    if ($owned){
-	        $user = $this->signedRequest('GET', '/users/me');
-	        $queryString .= '&user='.$user->userId;
-        }
-        
-		return $this->signedRequest('GET', '/streams?' . $queryString, null, true, true, true);
+		if ($owned) {
+			$user = $this->me();
+			$queryString .= '&user=' . $user->userId;
+		}
+
+		return $this->signedRequest('GET', '/streams?' . $queryString, null, false, true, true);
 	}
 
 	public function magazines($magazineId, $queryString) {

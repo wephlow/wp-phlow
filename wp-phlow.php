@@ -29,6 +29,8 @@ class phlow {
 		$this->_plugin_dir = dirname(__FILE__);
 		$this->_plugin_url = get_site_url(null, 'wp-content/plugins/' . basename($this->_plugin_dir));
 		$this->ajax_url = admin_url('admin-ajax.php');
+		$this->app_url = 'https://app.phlow.com';
+		$this->cp_url = 'https://cp.phlow.com';
 		$this->api = api::getInstance();
 		$this->mailchimp = mailchimp::getInstance();
 		$this->ssga = new ssga(get_option('phlow_google_analytics_ua'));
@@ -176,7 +178,7 @@ class phlow {
 			foreach ($photos as $photo) {
 				$images[] = array(
 					'id' => $photo->photoId,
-					'url' => 'https://app.phlow.com/magazine/' . $context . '?autoscroll=1',
+					'url' => $this->app_url . '/magazine/' . $context . '?autoscroll=1',
 					'src' => $photo->url
 				);
 
@@ -192,7 +194,7 @@ class phlow {
 			foreach ($photos as $photo) {
 				$images[] = array(
 					'id' => $photo->photoId,
-					'url' => 'https://app.phlow.com/moment/' . $context . '?autoscroll=1',
+					'url' => $this->app_url . '/moment/' . $context . '?autoscroll=1',
 					'src' => $photo->url
 				);
 
@@ -213,7 +215,7 @@ class phlow {
                 foreach ($photos as $photo) {
                     $images[] = array(
                     	'id' => $photo->photoId,
-                        'url' => 'https://app.phlow.com/stream/' . $context . '/photo/' . $photo->photoId . '?autoscroll=1',
+                        'url' => $this->app_url . '/stream/' . $context . '/photo/' . $photo->photoId . '?autoscroll=1',
                         'src' => $photo->url
                     );
 
@@ -257,7 +259,7 @@ class phlow {
 	    		<div class="powered-by">
 	    			<span class="first-child">' . __($poweredBy) . '</span>
 	    			<span> </span>
-	    			<a class="plugin-url" target="_blank" href="https://app.phlow.com">
+	    			<a class="plugin-url" target="_blank" href="' . $this->app_url . '">
 	    				<span class="phlow-red">phlow</span>
 	    				<span> </span>
 	    				<i class="icon-logo-small"></i>
@@ -300,7 +302,7 @@ class phlow {
 				<div class="powered-by">
 					<span class="first-child">' . __($poweredBy) . '</span>
 					<span> </span>
-					<a class="plugin-url" target="_blank" href="https://app.phlow.com">
+					<a class="plugin-url" target="_blank" href="' . $this->app_url . '">
 						<span class="phlow-red">phlow</span>
 						<span> </span>
 						<i class="icon-logo-small"></i>
@@ -324,7 +326,7 @@ class phlow {
 		$violence = $atts['violence'];
         $owned = $atts['owned'];
 
-		$url = 'http://app.phlow.com';
+		$url = $this->app_url;
 
 		if ($source == 'magazine') {
 			$url .= '/magazine/' . $context;
@@ -651,7 +653,7 @@ class phlow {
 				<p>' . phlow_message_success(__('You have successfully logged out of phlow')) . '</p>
 				<p>
 					<a
-						href="http://cp.phlow.com/clients/new?type=wordpress&redirectUrl=' . $url . '"
+						href="' . $this->cp_url . '/clients/new?type=wordpress&redirectUrl=' . $url . '"
 						class="button"
 					>' . __('Log in to phlow') . '</a>
 				</p>
@@ -667,7 +669,7 @@ class phlow {
 				<h1>' . __('phlow settings') . '</h1>
 				<p>
 					<a
-						href="http://cp.phlow.com/clients/new?type=wordpress&redirectUrl=' . $url . '"
+						href="' . $this->cp_url . '/clients/new?type=wordpress&redirectUrl=' . $url . '"
 						class="button"
 					>' . __('Log in to phlow') . '</a>
 				</p>
