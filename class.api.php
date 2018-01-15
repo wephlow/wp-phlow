@@ -3,7 +3,7 @@
  * Phlow API wrapper
  */
 
-class api {
+class phlowAPI {
     // The singleton instance
 	private static $instance = null;
 	private static $apiUrl = 'https://api.phlow.com';
@@ -178,7 +178,7 @@ class api {
 		return $this->signedRequest('GET', '/events/' . $momentId . '?' . $queryString, null, true, true, true);
 	}
 
-	public function generateGuestUser(){
+	public function generateGuestUser() {
         return $this->signedRequest('POST', '/users/guest', null, false, false);
     }
 

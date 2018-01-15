@@ -1,20 +1,16 @@
 <?php
 /**
- * Plugin Name: wp-phlow
+ * Plugin Name: phlow
  * Description: phlow allows you to embed a carousel or a widget of photographs relevant to a specific theme or context. Be it #wedding#gowns, #portraits#blackandwhite or #yoga, phlow provides you with images that are fresh and relevant. To get started, log through a phlow account (it is 100% free) and either embed the stream in your WYSIWYG editor or add a widget to your blog.
- * Version: 1.3.5
+ * Version: 1.4.1
  * Author: phlow
  * Author URI: http://phlow.com
  */
 
 define('PHLOW__PLUGIN_DIR', plugin_dir_path(__FILE__));
-require_once(PHLOW__PLUGIN_DIR . 'class.api.php');
-require_once(PHLOW__PLUGIN_DIR . 'class.mailchimp.php');
-require_once(PHLOW__PLUGIN_DIR . 'BFIGitHubPluginUpdater.php');
-require_once(PHLOW__PLUGIN_DIR . 'libs/twitteroauth/autoload.php');
-require_once(PHLOW__PLUGIN_DIR . 'libs/ssga/ss-ga.class.php');
 
-use Abraham\TwitterOAuth\TwitterOAuth;
+require_once(PHLOW__PLUGIN_DIR . 'libs/BFIGitHubPluginUpdater.php');
+require_once(PHLOW__PLUGIN_DIR . 'class.api.php');
 
 class phlow {
 	protected $_plugin_id = 'wp-phlow';
@@ -31,22 +27,19 @@ class phlow {
 		$this->ajax_url = admin_url('admin-ajax.php');
 		$this->app_url = 'https://app.phlow.com';
 		$this->cp_url = 'https://cp.phlow.com';
-		$this->api = api::getInstance();
-		$this->mailchimp = mailchimp::getInstance();
-		$this->ssga = new ssga(get_option('phlow_google_analytics_ua'));
+		$this->api = phlowAPI::getInstance();
 	}
 
 	protected function addActions() {
-	    add_action( 'init', array($this, 'phlow_localize'));
-		add_action( 'admin_enqueue_scripts', array($this,'enqueue') );
-		add_action( 'widgets_init', 'phlow_register_widget' );
-		add_action( 'wp_enqueue_scripts', array($this,'enqueue') );
+	    add_action('init', array($this, 'phlow_init'));
+		add_action('admin_enqueue_scripts', array($this,'enqueue'));
+		add_action('widgets_init', 'phlow_register_widget');
+		add_action('wp_enqueue_scripts', array($this,'enqueue'));
 
-		if( is_admin() ) {
-			add_action('admin_head', array( $this, 'admin_head') );
-			add_action('admin_menu', array($this,'phlow_menu'));
-
-            new BFIGitHubPluginUpdater( __FILE__, 'wephlow', "wp-phlow" );
+		if (is_admin()) {
+			add_action('admin_head', array($this, 'admin_head'));
+			add_action('admin_menu', array($this, 'phlow_menu'));
+            new BFIGitHubPluginUpdater(__FILE__, 'wephlow', 'wp-phlow');
 		}
 
 		// async actions
@@ -60,16 +53,6 @@ class phlow {
         add_action('wp_ajax_phlow_images_get', array($this, 'phlow_ajax_get_images'));
         add_action('wp_ajax_nopriv_phlow_photo_seen', array($this, 'phlow_ajax_photo_seen'));
         add_action('wp_ajax_phlow_photo_seen', array($this, 'phlow_ajax_photo_seen'));
-        add_action('wp_ajax_nopriv_phlow_user_create', array($this, 'phlow_ajax_create_user'));
-        add_action('wp_ajax_phlow_user_create', array($this, 'phlow_ajax_create_user'));
-        add_action('wp_ajax_nopriv_phlow_user_login', array($this, 'phlow_ajax_login_user'));
-        add_action('wp_ajax_phlow_user_login', array($this, 'phlow_ajax_login_user'));
-        add_action('wp_ajax_nopriv_phlow_user_social_create', array($this, 'phlow_ajax_create_user_social'));
-        add_action('wp_ajax_phlow_user_social_create', array($this, 'phlow_ajax_create_user_social'));
-        add_action('wp_ajax_nopriv_phlow_twitter_request_token', array($this, 'phlow_ajax_twitter_request_token'));
-        add_action('wp_ajax_phlow_twitter_request_token', array($this, 'phlow_ajax_twitter_request_token'));
-        add_action('wp_ajax_nopriv_phlow_twitter_access_token', array($this, 'phlow_ajax_twitter_access_token'));
-        add_action('wp_ajax_phlow_twitter_access_token', array($this, 'phlow_ajax_twitter_access_token'));
 	}
 
     public function addShortcodes()
@@ -78,13 +61,18 @@ class phlow {
             add_shortcode('phlow_stream', array($this, 'shortcode_phlow_page'));
             add_shortcode('phlow_group', array($this, 'shortcode_groups_image'));
             add_shortcode('phlow_line', array($this, 'shortcode_line_images'));
-            add_shortcode('phlow_registration', array($this, 'shortcode_registration'));
         }
     }
 
-	public function phlow_localize() {
+	/**
+	 * Plugin initialization
+	 */
+	public function phlow_init() {
         // Localization
 		load_plugin_textdomain('phlow', false, dirname(plugin_basename(__FILE__)). "/languages" );
+
+		// GitHub updater
+		is_admin() && new BFIGitHubPluginUpdater(__FILE__, 'wephlow', 'wp-phlow');
 
         if (!isset($_COOKIE['phlow_sessionPrivateKey'])) {
             $return = $this->api->generateGuestUser();
@@ -98,11 +86,35 @@ class phlow {
         }
     }
 
+    /**
+     * Update client and session keys
+     * @param [array] $keys
+     */
+    private function phlow_update_keys($keys) {
+    	if (isset($keys) && is_array($keys) &&
+    		array_key_exists('client_public_key', $keys) &&
+    		array_key_exists('client_private_key', $keys) &&
+    		array_key_exists('session_public_key', $keys) &&
+    		array_key_exists('session_private_key', $keys))
+    	{
+    		update_option('phlow_clientPublicKey', $keys['client_public_key']);
+			update_option('phlow_clientPrivateKey', $keys['client_private_key']);
+			update_option('phlow_sessionPublicKey', $keys['session_public_key']);
+			update_option('phlow_sessionPrivateKey', $keys['session_private_key']);
+    	}
+    	else {
+    		update_option('phlow_clientPublicKey', '');
+			update_option('phlow_clientPrivateKey', '');
+			update_option('phlow_sessionPublicKey', '');
+			update_option('phlow_sessionPrivateKey', '');
+    	}
+    }
+
     public function enqueue() {
     	// styles
     	wp_register_style('ph_css', $this->_plugin_url . '/css/tipped/tipped.css', false, '1.0.0');
         wp_enqueue_style('ph_css');
-        wp_enqueue_style('phlow_shortcode', $this->_plugin_url .'/mce_plugin/css/mce-button.css' );
+        wp_enqueue_style('phlow_shortcode', $this->_plugin_url .'/mce_plugin/css/mce-button.css?t='.time() );
         wp_enqueue_style('phlow_autocomplete', $this->_plugin_url .'/css/autocomplete/easy-autocomplete.min.css');
         wp_enqueue_style('phlow', $this->_plugin_url .'/css/phlow.css');
 
@@ -118,13 +130,10 @@ class phlow {
         wp_register_script('phlow_visible', $this->_plugin_url . '/js/jquery-visible/jquery.visible.min.js', array('jquery'), null, false);
         wp_enqueue_script('phlow_visible');
         wp_register_script('phlow_loader', $this->_plugin_url . '/js/loader.js', array('jquery'), null, false);
-        wp_register_script('phlow_registration', $this->_plugin_url . '/js/registration.js', array('jquery'), null, false);
 
 		// js variables
 		wp_localize_script('phlow', 'phlowAjax', array(
-			'url' => $this->ajax_url,
-			'facebook_app_id' => get_option('phlow_facebook_app_id'),
-			'google_client_id' => get_option('phlow_google_client_id')
+			'url' => $this->ajax_url
 		));
     }
 
@@ -422,89 +431,8 @@ class phlow {
 		return $shortcode;
 	}
 
-	// phlow registration widget
-	public function shortcode_registration($atts) {
-        wp_enqueue_script('phlow_registration');
-
-        $dataParams = array();
-
-        // Tags
-        $tags = $atts['tags'];
-
-        if (isset($tags) && !empty($tags)) {
-            $tags = preg_replace('/[^0-9a-zA-Z,:]/', '', $tags);
-            $tags = strtolower($tags);
-            $dataParams[] = 'data-tags=' . $tags;
-        }
-
-        // MailChimp list id
-        $list_id = $atts['list'];
-
-        if (isset($list_id) && !empty($list_id)) {
-        	$dataParams[] = 'data-list=' . sanitize_text_field($list_id);
-        }
-
-        // MailChimp group id
-        $group_id = $atts['group'];
-
-        if (isset($group_id) && !empty($group_id)) {
-        	$dataParams[] = 'data-group=' . sanitize_text_field($group_id);
-        }
-
-        // MailChimp merge field
-        $merge_field = $atts['referralcode'];
-
-        if (isset($merge_field) && !empty($merge_field)) {
-        	$dataParams[] = 'data-field=' . sanitize_text_field($merge_field);
-        }
-
-        // Redirect URL
-        $redirect_url = $atts['redirection'];
-
-        if (isset($redirect_url) && !empty($redirect_url)) {
-        	$dataParams[] = 'data-redirection=' . sanitize_text_field($redirect_url);
-        }
-
-		$widgetId = 'phlow_registration_' . (time() + rand(1, 1000));
-        $dataParams = implode(' ', $dataParams);
-
-        ob_start();
-
-		echo '
-			<div id="' . $widgetId . '" ' . $dataParams . ' class="phlow-reg">
-                <ul class="phlow-reg-tabs">
-                	<li data-tab="register" class="active">Register</li>
-                	<li data-tab="login">Already have account</li>
-                </ul>
-                <div class="phlow-reg-box">
-                	<ul class="phlow-reg-errors"></ul>
-					<div class="field-block">
-						<input type="text" placeholder="Email" class="phlow-reg-email" />
-					</div>
-					<div class="field-block">
-						<input type="password" placeholder="Password" class="phlow-reg-passwd" />
-					</div>
-	                <div class="phlow-reg-buttons">
-					    <button class="phlow-reg-submit">Register</button>
-	                    <button class="phlow-reg-facebook">Sign up with Facebook</button>
-	                    <button class="phlow-reg-google">Sign up with Google</button>
-	                    <button class="phlow-reg-twitter">Sign up with Twitter</button>
-	                </div>
-	                <div class="phlow-reg-loader">
-	                	<div class="spin">
-	                    	<svg width="32px" height="32px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid"><rect x="0" y="0" width="100" height="100" fill="none"></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(0 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(30 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.08333333333333333s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(60 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.16666666666666666s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(90 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.25s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(120 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.3333333333333333s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(150 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.4166666666666667s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(180 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.5s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(210 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.5833333333333334s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(240 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.6666666666666666s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(270 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.75s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(300 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.8333333333333334s" repeatCount="indefinite"/></rect><rect  x="46.5" y="40" width="7" height="20" rx="5" ry="5" fill="#f44336" transform="rotate(330 50 50) translate(0 -30)">  <animate attributeName="opacity" from="1" to="0" dur="1s" begin="0.9166666666666666s" repeatCount="indefinite"/></rect></svg>
-	                    </div>
-	                </div>
-                </div>
-			</div>
-		';
-
-		return ob_get_clean();
-	}
-
 	public function phlow_menu() {
 		add_submenu_page( 'options-general.php', 'phlow-settings', 'phlow', 'manage_options', 'phlow-settings.php', array($this, 'phlow_settings') );
-		add_submenu_page( 'options-general.php', 'phlow-auth', null, 'manage_options', 'phlow-auth.php', array($this, 'phlow_auth_settings') );
 	}
 
 	public function phlow_settings() {
@@ -635,15 +563,12 @@ class phlow {
 			isset($_GET['sessionPrivateKey']) &&
 			isset($_GET['sessionPublicKey']))
 		{
-			$clientPublicKey = $_GET['clientPublicKey'];
-			$clientPrivateKey = $_GET['clientPrivateKey'];
-			$sessionPrivateKey = $_GET['sessionPrivateKey'];
-			$sessionPublicKey = $_GET['sessionPublicKey'];
-
-			update_option('phlow_clientPublicKey', $clientPublicKey);
-			update_option('phlow_clientPrivateKey', $clientPrivateKey);
-			update_option('phlow_sessionPrivateKey', $sessionPrivateKey);
-			update_option('phlow_sessionPublicKey', $sessionPublicKey);
+			$this->phlow_update_keys(array(
+				'client_public_key' => $_GET['clientPublicKey'],
+				'client_private_key' => $_GET['clientPrivateKey'],
+				'session_public_key' => $_GET['sessionPublicKey'],
+				'session_private_key' => $_GET['sessionPrivateKey']
+			));
 
 			self::phlow_settings_html();
 		}
@@ -659,10 +584,7 @@ class phlow {
 				</p>
 			';
 
-			update_option('phlow_clientPublicKey','');
-			update_option('phlow_clientPrivateKey','');
-			update_option('phlow_sessionPrivateKey','');
-			update_option('phlow_sessionPublicKey','');
+			$this->phlow_update_keys();
 		}
 		elseif (get_option('phlow_clientPublicKey') == null || get_option('phlow_clientPublicKey') == '' ) {
 			echo '
@@ -776,154 +698,6 @@ class phlow {
 			<h1>' . __('phlow') . '</h1>
 			' . $tabs_html . '
 			' . $content . '
-		';
-	}
-
-	/**
-	 * phlow authentication settings
-	 */
-	public function phlow_auth_settings() {
-		$url = admin_url('options-general.php?page=phlow-auth.php');
-
-		// Save settings
-		if (isset($_POST['submit_auth_settings'])) {
-			$facebookAppId = $_POST['phlow_facebook_app_id'];
-			$facebookAppId = isset($facebookAppId) ? sanitize_text_field($facebookAppId) : '';
-			update_option('phlow_facebook_app_id', $facebookAppId);
-
-			$googleClientId = $_POST['phlow_google_client_id'];
-			$googleClientId = isset($googleClientId) ? sanitize_text_field($googleClientId) : '';
-			update_option('phlow_google_client_id', $googleClientId);
-
-			$twitterSecret = $_POST['phlow_twitter_consumer_secret'];
-			$twitterSecret = isset($twitterSecret) ? sanitize_text_field($twitterSecret) : '';
-			update_option('phlow_twitter_consumer_secret', $twitterSecret);
-
-			$twitterKey = $_POST['phlow_twitter_consumer_key'];
-			$twitterKey = isset($twitterKey) ? sanitize_text_field($twitterKey) : '';
-			update_option('phlow_twitter_consumer_key', $twitterKey);
-
-			$mailchimpApiKey = $_POST['phlow_mailchimp_api_key'];
-			$mailchimpApiKey = isset($mailchimpApiKey) ? sanitize_text_field($mailchimpApiKey) : '';
-			update_option('phlow_mailchimp_api_key', $mailchimpApiKey);
-
-			$googleAnalyticsUA = $_POST['phlow_google_analytics_ua'];
-			$googleAnalyticsUA = isset($googleAnalyticsUA) ? sanitize_text_field($googleAnalyticsUA) : '';
-			update_option('phlow_google_analytics_ua', $googleAnalyticsUA);
-		}
-
-		echo '
-			<div class="wrap" style="margin-top:30px">
-				<h1>' . __('phlow authentication settings') . '</h1>
-				<form method="post" action="' . $url . '">
-					<h2 class="title" style="margin-bottom: 0;">' . __('Facebook') . '</h2>
-					<table class="form-table">
-						<tr>
-							<th>
-								<label>' . __('App ID') . '</label>
-							</th>
-							<td>
-								<input
-									type="text"
-									name="phlow_facebook_app_id"
-									class="regular-text"
-									value="' . get_option('phlow_facebook_app_id') . '"
-								/>
-							</td>
-						</tr>
-					</table>
-					<hr />
-					<h2 class="title" style="margin-bottom: 0;">' . __('Google') . '</h2>
-					<table class="form-table">
-						<tr>
-							<th>
-								<label>' . __('Client ID') . '</label>
-							</th>
-							<td>
-								<input
-									type="text"
-									name="phlow_google_client_id"
-									class="regular-text"
-									value="' . get_option('phlow_google_client_id') . '"
-								/>
-							</td>
-						</tr>
-					</table>
-					<hr />
-					<h2 class="title" style="margin-bottom: 0;">' . __('Twitter') . '</h2>
-					<table class="form-table">
-						<tr>
-							<th>
-								<label>' . __('Consumer Key') . '</label>
-							</th>
-							<td>
-								<input
-									type="text"
-									name="phlow_twitter_consumer_key"
-									class="regular-text"
-									value="' . get_option('phlow_twitter_consumer_key') . '"
-								/>
-							</td>
-						</tr>
-						<tr>
-							<th>
-								<label>' . __('Consumer Secret') . '</label>
-							</th>
-							<td>
-								<input
-									type="text"
-									name="phlow_twitter_consumer_secret"
-									class="regular-text"
-									value="' . get_option('phlow_twitter_consumer_secret') . '"
-								/>
-							</td>
-						</tr>
-					</table>
-					<hr />
-					<h2 class="title" style="margin-bottom: 0;">' . __('MailChimp') . '</h2>
-					<table class="form-table">
-						<tr>
-							<th>
-								<label>' . __('API Key') . '</label>
-							</th>
-							<td>
-								<input
-									type="text"
-									name="phlow_mailchimp_api_key"
-									class="regular-text"
-									value="' . get_option('phlow_mailchimp_api_key') . '"
-								/>
-							</td>
-						</tr>
-					</table>
-					<hr />
-					<h2 class="title" style="margin-bottom: 0;">' . __('Google Analytics') . '</h2>
-					<table class="form-table">
-						<tr>
-							<th>
-								<label>' . __('UA-XXXXX-Y') . '</label>
-							</th>
-							<td>
-								<input
-									type="text"
-									name="phlow_google_analytics_ua"
-									class="regular-text"
-									value="' . get_option('phlow_google_analytics_ua') . '"
-								/>
-							</td>
-						</tr>
-					</table>
-					<hr />
-					<p class="submit">
-						<input
-							type="submit"
-							name="submit_auth_settings"
-							class="button button-primary"
-							value="' . __('Save Changes') . '"
-						/>
-					</p>
-				</form>
-			</div>
 		';
 	}
 
@@ -1296,30 +1070,6 @@ class phlow {
 		return $html;
 	}
 
-	public function phlow_ga_send_register_event($data) {
-		if (!is_array($data)) {
-			return;
-		}
-
-		if (!isset($data['utm_campaign']) ||
-			!isset($data['utm_content']) ||
-			!isset($data['utm_source']) ||
-			!isset($data['utm_medium']) ||
-			!isset($data['utm_term']))
-		{
-			return;
-		}
-
-		$label = 'utm_source=' . $data['utm_source'] . '&' .
-			'utm_medium=' . $data['utm_medium'] . '&' .
-			'utm_campaign=' . $data['utm_campaign'] . '&' .
-			'utm_term=' . $data['utm_term'] . '&' .
-			'utm_content=' . $data['utm_content'];
-
-		$this->ssga->set_event('phlow', 'register', $label);
-        $this->ssga->send();
-	}
-
 	public function phlow_ajax_get_type() {
 		$this->query = $_GET;
 		$type = $this->query['type'];
@@ -1535,381 +1285,6 @@ class phlow {
 		wp_die();
 	}
 
-    public function phlow_ajax_create_user() {
-        $this->query = $_POST;
-
-        $params = array(
-            'email' => trim($this->query['email']),
-            'username' => ''
-        );
-
-        // Prepare password
-        $password = $this->query['password'];
-
-        if (isset($password) && !empty($password)) {
-            $password = hash('sha256', $password);
-        }
-        else {
-            $password = '';
-        }
-
-        $params['password'] = $password;
-
-        // Prepare favorite tags
-        $tags = $this->query['tags'];
-
-        if (isset($tags) && !empty($tags)) {
-            $tags = preg_replace('/[^0-9a-zA-Z,:]/', '', $tags);
-            $tags = strtolower($tags);
-            $tags = explode(',', $tags);
-
-            $favoriteTags = array();
-
-            foreach ($tags as $value) {
-                if (empty($value) || strlen($value) < 3) {
-                    continue;
-                }
-
-                $favoriteTags[] = array(
-                    'tag' => $value,
-                    'score' => 1
-                );
-            }
-
-            if (count($favoriteTags)) {
-                $params['favoriteTags'] = $favoriteTags;
-            }
-        }
-
-        // Prepare referral code
-        $referralCode = $this->query['referralcode'];
-
-        if (isset($referralCode) && !empty($referralCode)) {
-        	$params['invitationCode'] = $referralCode;
-        }
-
-        // Prepare MailChimp list id
-        $list_id = $this->query['list'];
-
-        if (isset($list_id) && !empty($list_id)) {
-        	$list_id = sanitize_text_field($list_id);
-        }
-
-        // Prepare MailChimp interest id
-        $interest_id = $this->query['group'];
-
-        if (isset($interest_id) && !empty($interest_id)) {
-        	$interest_id = sanitize_text_field($interest_id);
-        }
-
-        // Register user
-        $req = $this->api->register($params);
-
-        if (isset($req->status) && $req->status != 200) {
-        	echo json_encode(array(
-        		'success' => false,
-        		'errors' => array($req->message)
-        	));
-        	wp_die();
-        }
-
-        // Send GA event
-        $ga_data = $this->query['ga'];
-        $this->phlow_ga_send_register_event($ga_data);
-
-        // Set private and public keys
-        $this->api->setKeys($req->privateKey, $req->publicKey);
-
-        // Get user's data
-        $req_me = $this->api->me(true);
-
-        // Prepare MailChimp merge fields
-        $field_name = $this->query['field'];
-        $merge_fields = array();
-
-        if (isset($field_name) && !empty($field_name)) {
-        	$field_name = sanitize_text_field($field_name);
-    		$merge_fields[$field_name] = $req_me->meta->invitationCode;
-        }
-
-        // Add user to MailChimp
-        $this->mailchimp->addMember($req->user->email, $list_id, $interest_id, $merge_fields);
-
-        echo json_encode(array(
-        	'success' => true
-        ));
-        wp_die();
-    }
-
-    public function phlow_ajax_create_user_social() {
-        $this->query = $_POST;
-        $params = array();
-
-        // Facebook token
-        if (isset($this->query['facebookToken'])) {
-            $params['facebookToken'] = trim($this->query['facebookToken']);
-        }
-
-        // Google token
-        if (isset($this->query['googleToken'])) {
-            $params['googleToken'] = trim($this->query['googleToken']);
-        }
-
-        // Twitter tokens
-        if (isset($this->query['twitterTokenSecret']) &&
-        	isset($this->query['twitterToken']))
-        {
-        	$params['twitter'] = array(
-        		'token_secret' => trim($this->query['twitterTokenSecret']),
-        		'token' => trim($this->query['twitterToken'])
-    		);
-        }
-
-        // Prepare favorite tags
-        $tags = $this->query['tags'];
-
-        if (isset($tags) && !empty($tags)) {
-            $tags = preg_replace('/[^0-9a-zA-Z,:]/', '', $tags);
-            $tags = strtolower($tags);
-            $tags = explode(',', $tags);
-
-            $favoriteTags = array();
-
-            foreach ($tags as $value) {
-                if (empty($value) || strlen($value) < 3) {
-                    continue;
-                }
-
-                $favoriteTags[] = array(
-                    'tag' => $value,
-                    'score' => 1
-                );
-            }
-
-            if (count($favoriteTags)) {
-                $params['favoriteTags'] = $favoriteTags;
-            }
-        }
-
-        // Prepare referral code
-        $referralCode = $this->query['referralcode'];
-
-        if (isset($referralCode) && !empty($referralCode)) {
-        	$params['invitationCode'] = $referralCode;
-        }
-
-        // Prepare MailChimp list id
-        $list_id = $this->query['list'];
-
-        if (isset($list_id) && !empty($list_id)) {
-        	$list_id = sanitize_text_field($list_id);
-        }
-
-        // Prepare MailChimp interest id
-        $interest_id = $this->query['group'];
-
-        if (isset($interest_id) && !empty($interest_id)) {
-        	$interest_id = sanitize_text_field($interest_id);
-        }
-
-        if (!isset($params['facebookToken']) &&
-        	!isset($params['googleToken']) &&
-        	!isset($params['twitter']))
-        {
-            echo json_encode(array(
-                'success' => false,
-                'errors' => array('Please provide access token')
-            ));
-            wp_die();
-        }
-
-        // Create/login via social account
-        $req = $this->api->registerSocial($params);
-
-        if (isset($req->status) && $req->status != 200) {
-        	echo json_encode(array(
-        		'success' => false,
-        		'errors' => array($req->message)
-        	));
-        	wp_die();
-        }
-
-        // Send GA event
-        $ga_data = $this->query['ga'];
-        $this->phlow_ga_send_register_event($ga_data);
-
-        // Set private and public keys
-        $this->api->setKeys($req->privateKey, $req->publicKey);
-
-        // Get user's data
-        $req_me = $this->api->me(true);
-
-        // Prepare MailChimp merge fields
-        $field_name = $this->query['field'];
-        $merge_fields = array();
-
-        if (isset($field_name) && !empty($field_name)) {
-        	$field_name = sanitize_text_field($field_name);
-    		$merge_fields[$field_name] = $req_me->meta->invitationCode;
-        }
-
-        // Add user to MailChimp
-        $this->mailchimp->addMember($req->user->email, $list_id, $interest_id, $merge_fields);
-
-        echo json_encode(array(
-        	'success' => true
-        ));
-        wp_die();
-    }
-
-    public function phlow_ajax_login_user() {
-        $this->query = $_POST;
-
-        $params = array(
-            'email' => trim($this->query['email'])
-        );
-
-        // Prepare password
-        $password = $this->query['password'];
-
-        if (isset($password) && !empty($password)) {
-            $password = hash('sha256', $password);
-        }
-        else {
-            $password = '';
-        }
-
-        $params['password'] = $password;
-
-        // Prepare referral code
-        $referralCode = $this->query['referralcode'];
-
-        if (isset($referralCode) && !empty($referralCode)) {
-        	$params['invitationCode'] = $referralCode;
-        }
-
-        // Prepare MailChimp list id
-        $list_id = $this->query['list'];
-
-        if (isset($list_id) && !empty($list_id)) {
-        	$list_id = sanitize_text_field($list_id);
-        }
-
-        // Prepare MailChimp interest id
-        $interest_id = $this->query['group'];
-
-        if (isset($interest_id) && !empty($interest_id)) {
-        	$interest_id = sanitize_text_field($interest_id);
-        }
-
-        // Login user
-        $req = $this->api->login($params);
-
-        if (isset($req->status) && $req->status != 200) {
-        	echo json_encode(array(
-        		'success' => false,
-        		'errors' => array($req->message)
-        	));
-        	wp_die();
-        }
-
-        // Set private and public keys
-        $this->api->setKeys($req->privateKey, $req->publicKey);
-
-        // Get user's data
-        $req_me = $this->api->me(true);
-
-        // Prepare MailChimp merge fields
-        $field_name = $this->query['field'];
-        $merge_fields = array();
-
-        if (isset($field_name) && !empty($field_name)) {
-        	$field_name = sanitize_text_field($field_name);
-    		$merge_fields[$field_name] = $req_me->meta->invitationCode;
-        }
-
-        // Add user to MailChimp
-        $this->mailchimp->addMember($req->user->email, $list_id, $interest_id, $merge_fields);
-
-        echo json_encode(array(
-        	'success' => true
-        ));
-        wp_die();
-    }
-
-    public function phlow_ajax_twitter_request_token() {
-    	$consumerSecret = get_option('phlow_twitter_consumer_secret');
-    	$consumerKey = get_option('phlow_twitter_consumer_key');
-
-    	$conn = new TwitterOAuth($consumerKey, $consumerSecret);
-    	$res = $conn->oauth('oauth/request_token', array(
-    		'oauth_callback' => get_site_url() . '/twitter/auth'
-    	));
-
-    	echo json_encode(array(
-    		'token' => $res['oauth_token']
-    	));
-        wp_die();
-    }
-
-    public function phlow_ajax_twitter_access_token() {
-    	$this->query = $_GET;
-		$errors = array();
-
-		// Validate oauth verifier
-		$verifier = $this->query['verifier'];
-
-		if (!isset($verifier) ||
-			strlen($verifier) > 32)
-		{
-			$errors[] = __('Invalid verifier parameter');
-		}
-		else {
-			$verifier = trim($this->query['verifier']);
-		}
-
-		// Validate oauth token
-		$token = $this->query['token'];
-
-		if (!isset($token) ||
-			strlen($token) > 32)
-		{
-			$errors[] = __('Invalid token parameter');
-		}
-		else {
-			$token = trim($this->query['token']);
-		}
-
-		// Check errors
-		if (count($errors)) {
-			$response = array(
-				'success' => false,
-				'errors' => $errors
-			);
-		}
-		else {
-			$consumerSecret = get_option('phlow_twitter_consumer_secret');
-    		$consumerKey = get_option('phlow_twitter_consumer_key');
-
-			$conn = new TwitterOAuth($consumerKey, $consumerSecret);
-	    	$res = $conn->oauth('oauth/access_token', array(
-	    		'oauth_verifier' => $verifier,
-	    		'oauth_token' => $token
-	    	));
-
-	    	$response = array(
-	    		'success' => true,
-	    		'data' => array(
-	    			'token_secret' => $res['oauth_token_secret'],
-	    			'token' => $res['oauth_token']
-    			)
-			);
-		}
-
-    	echo json_encode($response);
-        wp_die();
-    }
-
 	public function admin_head() {
 		$plugin_url = plugins_url('/', __FILE__);
 		$nudity = (get_option('default_nudity') == '1') ? true : false;
@@ -2075,7 +1450,8 @@ function phlow_admin_notice__success() {
 
 	if (!$show_once) {
 		$url = admin_url('options-general.php?page=phlow-settings.php');
-		echo phlow_message_success(__('<b>phlow</b> is activated! Visit <a href="' . $url . '">the plugin settings page</a> to start using the plugin'));
+		$msg = __("<b>phlow</b> is activated! Visit <a href=$url>the plugin settings page</a> to start using the plugin");
+		echo phlow_message_success($msg);
 		update_option('show_activation_message', true);
 	}
 }
