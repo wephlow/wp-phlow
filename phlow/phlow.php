@@ -27,7 +27,7 @@ class phlow {
 		$this->ajax_url = admin_url('admin-ajax.php');
 		$this->app_url = 'https://app.phlow.com';
 		$this->cp_url = 'https://cp.phlow.com';
-		$this->api = api::getInstance();
+		$this->api = phlowAPI::getInstance();
 	}
 
 	protected function addActions() {
@@ -111,7 +111,7 @@ class phlow {
     	// styles
     	wp_register_style('ph_css', $this->_plugin_url . '/css/tipped/tipped.css', false, '1.0.0');
         wp_enqueue_style('ph_css');
-        wp_enqueue_style('phlow_shortcode', $this->_plugin_url .'/mce_plugin/css/mce-button.css' );
+        wp_enqueue_style('phlow_shortcode', $this->_plugin_url .'/mce_plugin/css/mce-button.css?t='.time() );
         wp_enqueue_style('phlow_autocomplete', $this->_plugin_url .'/css/autocomplete/easy-autocomplete.min.css');
         wp_enqueue_style('phlow', $this->_plugin_url .'/css/phlow.css');
 
@@ -430,7 +430,6 @@ class phlow {
 
 	public function phlow_menu() {
 		add_submenu_page( 'options-general.php', 'phlow-settings', 'phlow', 'manage_options', 'phlow-settings.php', array($this, 'phlow_settings') );
-		// add_submenu_page( 'options-general.php', 'phlow-auth', null, 'manage_options', 'phlow-auth.php', array($this, 'phlow_auth_settings') );
 	}
 
 	public function phlow_settings() {
@@ -1448,7 +1447,8 @@ function phlow_admin_notice__success() {
 
 	if (!$show_once) {
 		$url = admin_url('options-general.php?page=phlow-settings.php');
-		echo phlow_message_success(__('<b>phlow</b> is activated! Visit <a href="' . $url . '">the plugin settings page</a> to start using the plugin'));
+		$msg = __("<b>phlow</b> is activated! Visit <a href=$url>the plugin settings page</a> to start using the plugin");
+		echo phlow_message_success($msg);
 		update_option('show_activation_message', true);
 	}
 }
