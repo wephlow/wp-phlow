@@ -8,6 +8,7 @@
  */
 
 define('PHLOW__PLUGIN_DIR', plugin_dir_path(__FILE__));
+define('PHLOW__DEPENDENT_PLUGIN', 'wp-phlow-private/wp-phlow-private.php');
 
 require_once(PHLOW__PLUGIN_DIR . 'libs/BFIGitHubPluginUpdater.php');
 require_once(PHLOW__PLUGIN_DIR . 'class.api.php');
@@ -1443,6 +1444,19 @@ register_activation_hook(__FILE__, 'phlow_activation_hook');
 
 function phlow_activation_hook() {
 	delete_option('show_activation_message');
+}
+
+// Deactivation
+register_deactivation_hook(__FILE__, 'phlow_deactivation_hook');
+
+function phlow_deactivation_hook() {
+	if (is_plugin_active(PHLOW__DEPENDENT_PLUGIN)) {
+		add_action('update_option_active_plugins', 'phlow_deactivate_dependent_plugins');
+	}
+}
+
+function phlow_deactivate_dependent_plugins() {
+	deactivate_plugins(PHLOW__DEPENDENT_PLUGIN);
 }
 
 function phlow_admin_notice__success() {
