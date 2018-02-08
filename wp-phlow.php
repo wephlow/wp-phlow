@@ -2,7 +2,7 @@
 /**
  * Plugin Name: phlow
  * Description: phlow allows you to embed a carousel or a widget of photographs relevant to a specific theme or context. Be it #wedding#gowns, #portraits#blackandwhite or #yoga, phlow provides you with images that are fresh and relevant. To get started, log through a phlow account (it is 100% free) and either embed the stream in your WYSIWYG editor or add a widget to your blog.
- * Version: 1.4.1
+ * Version: 1.4.2
  * Author: phlow
  * Author URI: http://phlow.com
  */
@@ -11,6 +11,7 @@ define('PHLOW__PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('PHLOW__DEPENDENT_PLUGIN', 'wp-phlow-private/wp-phlow-private.php');
 
 require_once(PHLOW__PLUGIN_DIR . 'libs/BFIGitHubPluginUpdater.php');
+require_once(PHLOW__PLUGIN_DIR . 'class.session.php');
 require_once(PHLOW__PLUGIN_DIR . 'class.api.php');
 
 class phlow {
@@ -21,13 +22,15 @@ class phlow {
 	public $shortcode_tag = 'phlow_stream';
 
 	public function __construct() {
+		$isDev = boolval(get_option('phlow_dev'));
 		$this->addActions();
 		$this->addShortcodes();
 		$this->_plugin_dir = dirname(__FILE__);
 		$this->_plugin_url = get_site_url(null, 'wp-content/plugins/' . basename($this->_plugin_dir));
 		$this->ajax_url = admin_url('admin-ajax.php');
-		$this->app_url = 'https://app.phlow.com';
-		$this->cp_url = 'https://cp.phlow.com';
+		$this->app_url = $isDev ? 'https://client-dev.phlow.com' : 'https://app.phlow.com';
+		$this->cp_url = $isDev ? 'https://cp-dev.phlow.com' : 'https://cp.phlow.com';
+		$this->session = phlowSession::getInstance();
 		$this->api = phlowAPI::getInstance();
 	}
 
@@ -115,7 +118,7 @@ class phlow {
     	// styles
     	wp_register_style('ph_css', $this->_plugin_url . '/css/tipped/tipped.css', false, '1.0.0');
         wp_enqueue_style('ph_css');
-        wp_enqueue_style('phlow_shortcode', $this->_plugin_url .'/mce_plugin/css/mce-button.css?t='.time() );
+        wp_enqueue_style('phlow_shortcode', $this->_plugin_url .'/mce_plugin/css/mce-button.css' );
         wp_enqueue_style('phlow_autocomplete', $this->_plugin_url .'/css/autocomplete/easy-autocomplete.min.css');
         wp_enqueue_style('phlow', $this->_plugin_url .'/css/phlow.css');
 
@@ -1267,19 +1270,37 @@ class phlow {
 			);
 		}
 		else {
-			if ($source == 'streams') {
-				$this->api->seen($photoId, $context, null, null);
-			}
-			else if ($source == 'magazine') {
-				$this->api->seen($photoId, null, $context, null);
-			}
-			else if ($source == 'moment') {
-				$this->api->seen($photoId, null, null, $context);
+			// Set API keys
+			$userSession = $this->session->get();
+			$isReader = false;
+
+			if ($userSession) {
+				$this->api->setKeys($userSession['privateKey'], $userSession['publicKey']);
+				$isReader = true;
 			}
 
-			$response = array(
-				'success' => true
-			);
+			// API calls
+			if ($source == 'streams') {
+				$req = $this->api->seen($photoId, $isReader, $context, null, null);
+			}
+			else if ($source == 'magazine') {
+				$req = $this->api->seen($photoId, $isReader, null, $context, null);
+			}
+			else if ($source == 'moment') {
+				$req = $this->api->seen($photoId, $isReader, null, null, $context);
+			}
+
+			if (isset($req['error'])) {
+				$response = array(
+					'success' => false,
+					'errors' => $req['error']
+				);
+			}
+			else {
+				$response = array(
+					'success' => true
+				);
+			}
 		}
 
 		echo json_encode($response);

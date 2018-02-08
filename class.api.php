@@ -1,15 +1,19 @@
 <?php
 /**
- * Phlow API wrapper
+ * Phlow API class
  */
 
 class phlowAPI {
-    // The singleton instance
 	private static $instance = null;
-	private static $apiUrl = 'https://api.phlow.com';
     private $phlow_sessionPrivateKey;
     private $phlow_sessionPublicKey;
 
+    public function __construct() {
+    	$isDev = boolval(get_option('phlow_dev'));
+    	$this->apiUrl = $isDev ? 'https://api-dev.phlow.com' : 'https://api.phlow.com';
+    }
+
+	// The singleton instance
 	public static function getInstance() {
 		if (self::$instance == null) {
 			self::$instance = new self;
@@ -24,15 +28,16 @@ class phlowAPI {
     }
 
     private function getUserCredentials($isReader){
-	    if (!$isReader){
+	    if ($isReader){
             $sessionKeys = array(
-                'privateKey' => get_option('phlow_sessionPrivateKey'),
-                'publicKey' => get_option('phlow_sessionPublicKey')
-            );
-        } else {
-	        $sessionKeys = array(
                 'privateKey' => $this->phlow_sessionPrivateKey,
                 'publicKey' => $this->phlow_sessionPublicKey
+            );
+        }
+        else {
+	        $sessionKeys = array(
+                'privateKey' => get_option('phlow_sessionPrivateKey'),
+                'publicKey' => get_option('phlow_sessionPublicKey')
             );
         }
 
@@ -70,7 +75,7 @@ class phlowAPI {
 
 	private function signedRequest($method, $endpoint, $body=null, $isReader=false, $isUserSigned=true, $waitForResponse=true, $isAjaxPage=false) {
 		$uri = '/v1' . $endpoint;
-		$url = self::$apiUrl . $uri;
+		$url = $this->apiUrl . $uri;
 		$time = $this->time();
         $httpHeaders = array();
 
@@ -82,6 +87,9 @@ class phlowAPI {
 
             if (is_array($body)) {
                 curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($body));
+            }
+            else {
+            	$httpHeaders[] = 'Content-Length:0';
             }
         }
 
@@ -103,11 +111,12 @@ class phlowAPI {
             curl_setopt($curl, CURLOPT_TIMEOUT_MS, 100);
         }
 
-        $jsonResult = curl_exec($curl);
-		$result = json_decode($jsonResult);
+        $response = curl_exec($curl);
+        $status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+		$result = json_decode($response);
 		curl_close($curl);
 
-		return $result;
+		return ($status == 200) ? $result : array('error' => $response);
 	}
 
 	private function getPageURL($isAjaxCall = false){
@@ -124,7 +133,7 @@ class phlowAPI {
 		$curl = curl_init();
 		curl_setopt_array($curl, array(
 		    CURLOPT_RETURNTRANSFER => 1,
-		    CURLOPT_URL => self::$apiUrl . '/v1/time'
+		    CURLOPT_URL => $this->apiUrl . '/v1/time'
 		));
 
 		$time = json_decode(curl_exec($curl))->time;
@@ -182,7 +191,7 @@ class phlowAPI {
         return $this->signedRequest('POST', '/users/guest', null, false, false);
     }
 
-	public function seen($photoId, $stream = null, $magazine = null, $moment = null) {
+	public function seen($photoId, $isReader, $stream = null, $magazine = null, $moment = null) {
         /** add caller page */
         $queryParams = array();
 
@@ -199,6 +208,6 @@ class phlowAPI {
         $endpoint = '/photos/' . $photoId . '/activity/seen/?';
         $endpoint .= implode('&', $queryParams);
 
-        return $this->signedRequest('POST', $endpoint, null, true, true, true, true);
+        return $this->signedRequest('POST', $endpoint, null, $isReader, true, true, true);
     }
 }
