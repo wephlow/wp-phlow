@@ -8,6 +8,7 @@ i.mce-i-bs3_panel:before {
 .image-list ul.groups-images {
     max-width: 470px;
     overflow: hidden;
+    line-height: 1;
 }
 .image-list ul.groups-images li {
     display: inline-block;
@@ -15,7 +16,7 @@ i.mce-i-bs3_panel:before {
     height: auto;
     width: 30%;
     padding: 3px !important;
-    margin: 0;
+    margin: 0 !important;
     border: 0 !important;
     font-size: 0 !important;
 }
@@ -23,6 +24,7 @@ i.mce-i-bs3_panel:before {
     display: inline-block;
     width: 100%;
     height: 100%;
+    margin: 0 !important;
     box-shadow: none !important;
     text-decoration: none !important;
     border: 0 !important;
@@ -38,10 +40,13 @@ i.mce-i-bs3_panel:before {
     vertical-align: bottom;
     box-shadow: none;
 }
-div.powered-by{
+div.powered-by {
     text-align:center;
     clear: both;
     padding-top: 10px;
+}
+div.powered-by br {
+    display: none !important;
 }
 a.plugin-url{
     box-shadow: none !important;
