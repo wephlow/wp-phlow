@@ -150,6 +150,10 @@ class phlowAPI {
         return $this->signedRequest('POST', '/users', $data, false, false);
     }
 
+    public function resetPassword($data = null) {
+    	return $this->signedRequest('POST', '/users/password', $data, false, false);
+    }
+
     public function registerSocial($data = null) {
         return $this->signedRequest('POST', '/users/social', $data, false, false);
     }
