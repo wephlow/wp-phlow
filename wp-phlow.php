@@ -7,6 +7,7 @@
  * Author URI: http://phlow.com
  */
 
+define('PHLOW__PLUGIN_VER', '1.4.2');
 define('PHLOW__PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('PHLOW__DEPENDENT_PLUGIN', 'wp-phlow-private/wp-phlow-private.php');
 
@@ -118,9 +119,9 @@ class phlow {
     	// styles
     	wp_register_style('ph_css', $this->_plugin_url . '/css/tipped/tipped.css', false, '1.0.0');
         wp_enqueue_style('ph_css');
-        wp_enqueue_style('phlow_shortcode', $this->_plugin_url .'/mce_plugin/css/mce-button.css' );
+        wp_enqueue_style('phlow_shortcode', $this->_plugin_url .'/mce_plugin/css/mce-button.css', false, PHLOW__PLUGIN_VER);
         wp_enqueue_style('phlow_autocomplete', $this->_plugin_url .'/css/autocomplete/easy-autocomplete.min.css');
-        wp_enqueue_style('phlow', $this->_plugin_url .'/css/phlow.css');
+        wp_enqueue_style('phlow', $this->_plugin_url .'/css/phlow.css', false, PHLOW__PLUGIN_VER);
 
         // scripts
         wp_register_script('ph_script', $this->_plugin_url .'/js/tipped/tipped.js', array('jquery'), null, false);
