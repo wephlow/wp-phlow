@@ -116,7 +116,7 @@ class phlowAPI {
 		$result = json_decode($response);
 		curl_close($curl);
 
-		return ($status == 200) ? $result : array('error' => $result);
+		return ($status == 200) ? $result : (object) array('error' => $result);
 	}
 
 	private function getPageURL($isAjaxCall = false){

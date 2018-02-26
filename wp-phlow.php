@@ -1191,18 +1191,18 @@ class phlow {
 
 		// Violence
 		$violence = $this->query['violence'];
-		$violence = (isset($violence) && !empty($violence)) ? 1 : 0;
-		$params['violence'] = $violence;
+		$violence = isset($violence) ? intval($violence) : null;
+		$params['violence'] = $violence ? 1 : 0;
 
 		// Nudity
 		$nudity = $this->query['nudity'];
-		$nudity = (isset($nudity) && !empty($nudity)) ? 1 : 0;
-		$params['nudity'] = $nudity;
+		$nudity = isset($nudity) ? intval($nudity) : null;
+		$params['nudity'] = $nudity ? 1 : 0;
 
 		// Owned
 		$owned = $this->query['owned'];
-		$owned = (isset($owned) && !empty($owned)) ? 1 : 0;
-		$params['owned'] = $owned;
+		$owned = isset($owned) ? intval($owned) : null;
+		$params['owned'] = $owned ? 1 : 0;
 
 		// Check errors
 		if (count($errors)) {
@@ -1291,11 +1291,12 @@ class phlow {
 				$req = $this->api->seen($photoId, $isReader, null, null, $context);
 			}
 
-			if (isset($req['error'])) {
-				$response = array(
+			if (isset($req->error)) {
+				echo json_encode(array(
 					'success' => false,
-					'errors' => $req['error']
-				);
+					'errors' => array($req->error->message)
+				));
+				wp_die();
 			}
 			else {
 				$response = array(
