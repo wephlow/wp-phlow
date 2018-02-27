@@ -32,8 +32,7 @@ class phlowSession {
 			'expiration' => time() + (7 * 24 * 60 * 60), // 7 days
 			'privateKey' => $data->privateKey,
 			'publicKey' => $data->publicKey,
-			'userId' => $user->userId,
-			'email' => $user->email
+			'userId' => $user->userId
 		);
 	}
 
@@ -63,6 +62,7 @@ class phlowSession {
 		$httponly = true;
 
 		setcookie($name, $value, $expire, $path, $domain, $secure, $httponly);
+		$_COOKIE[$name] = $value;
 	}
 
 	/**

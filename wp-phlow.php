@@ -2,12 +2,12 @@
 /**
  * Plugin Name: phlow
  * Description: phlow allows you to embed a carousel or a widget of photographs relevant to a specific theme or context. Be it #wedding#gowns, #portraits#blackandwhite or #yoga, phlow provides you with images that are fresh and relevant. To get started, log through a phlow account (it is 100% free) and either embed the stream in your WYSIWYG editor or add a widget to your blog.
- * Version: 1.4.2
+ * Version: 1.4.3
  * Author: phlow
  * Author URI: http://phlow.com
  */
 
-define('PHLOW__PLUGIN_VER', '1.4.2');
+define('PHLOW__PLUGIN_VER', '1.4.3');
 define('PHLOW__PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('PHLOW__DEPENDENT_PLUGIN', 'wp-phlow-private/wp-phlow-private.php');
 
@@ -79,15 +79,12 @@ class phlow {
 		// GitHub updater
 		is_admin() && new BFIGitHubPluginUpdater(__FILE__, 'wephlow', 'wp-phlow');
 
-        if (!isset($_COOKIE['phlow_sessionPrivateKey'])) {
-            $return = $this->api->generateGuestUser();
+        // User session
+        $sess = $this->session->get();
 
-            $this->api->setKeys($return->privateKey, $return->publicKey);
-
-            setcookie("phlow_sessionPrivateKey",$return->privateKey,time()+60*60*24*30, '/');
-            setcookie("phlow_sessionPublicKey",$return->publicKey,time()+60*60*24*30, '/');
-        } else {
-            $this->api->setKeys($_COOKIE['phlow_sessionPrivateKey'], $_COOKIE['phlow_sessionPublicKey']);
+        if (!$sess) {
+        	$req = $this->api->generateGuestUser();
+        	$this->session->set($req);
         }
     }
 
@@ -220,12 +217,17 @@ class phlow {
 		// streams
 		else {
 		    $queryString = 'context=' . $context . '&' . $queryString;
-
-            $owned = (isset($owned) && $owned==1) ? true : false;
+            $owned = (isset($owned) && $owned == 1) ? true : false;
 
 		    $photos = $this->api->streams($queryString, $owned)->photos;
 
-		    if (isset($photos) && sizeof($photos)>0) {
+		    // forget seen photos
+		    if (isset($photos) && sizeof($photos) < $limit) {
+		    	$this->api->forgetSeen($context);
+		    	$photos = $this->api->streams($queryString, $owned)->photos;
+		    }
+
+		    if (isset($photos) && sizeof($photos) > 0) {
                 foreach ($photos as $photo) {
                     $images[] = array(
                     	'id' => $photo->photoId,
@@ -1271,24 +1273,15 @@ class phlow {
 			);
 		}
 		else {
-			// Set API keys
-			$userSession = $this->session->get();
-			$isReader = false;
-
-			if ($userSession) {
-				$this->api->setKeys($userSession['privateKey'], $userSession['publicKey']);
-				$isReader = true;
-			}
-
 			// API calls
 			if ($source == 'streams') {
-				$req = $this->api->seen($photoId, $isReader, $context, null, null);
+				$req = $this->api->seen($photoId, $context, null, null);
 			}
 			else if ($source == 'magazine') {
-				$req = $this->api->seen($photoId, $isReader, null, $context, null);
+				$req = $this->api->seen($photoId, null, $context, null);
 			}
 			else if ($source == 'moment') {
-				$req = $this->api->seen($photoId, $isReader, null, null, $context);
+				$req = $this->api->seen($photoId, null, null, $context);
 			}
 
 			if (isset($req->error)) {

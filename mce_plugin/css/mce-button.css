@@ -80,6 +80,11 @@ span.phlow-red{
     }
 }
 /*image-list-horizontal*/
+.image-list-horizontal ul.line-images {
+    margin: 0 0 20px;
+    padding: 0;
+    list-style: none;
+}
 .image-list-horizontal ul.line-images li {
     display: inline-block;
     padding: 0;

@@ -5,12 +5,11 @@
 
 class phlowAPI {
 	private static $instance = null;
-    private $phlow_sessionPrivateKey;
-    private $phlow_sessionPublicKey;
 
     public function __construct() {
     	$isDev = boolval(get_option('phlow_dev'));
     	$this->apiUrl = $isDev ? 'https://api-dev.phlow.com' : 'https://api.phlow.com';
+    	$this->session = phlowSession::getInstance();
     }
 
 	// The singleton instance
@@ -22,36 +21,33 @@ class phlowAPI {
 		return self::$instance;
 	}
 
-	public function setKeys($private, $public){
-	    $this->phlow_sessionPrivateKey = $private;
-	    $this->phlow_sessionPublicKey = $public;
-    }
+    private function getUserCredentials() {
+	    $sess = $this->session->get();
 
-    private function getUserCredentials($isReader){
-	    if ($isReader){
-            $sessionKeys = array(
-                'privateKey' => $this->phlow_sessionPrivateKey,
-                'publicKey' => $this->phlow_sessionPublicKey
-            );
-        }
-        else {
-	        $sessionKeys = array(
-                'privateKey' => get_option('phlow_sessionPrivateKey'),
-                'publicKey' => get_option('phlow_sessionPublicKey')
-            );
-        }
+	    if ($sess && !is_admin()) {
+	    	$sessionKeys = array(
+	    		'privateKey' => $sess['privateKey'],
+	    		'publicKey' => $sess['publicKey']
+	    	);
+	    }
+	    else {
+	    	$sessionKeys = array(
+	    		'privateKey' => get_option('phlow_sessionPrivateKey'),
+	    		'publicKey' => get_option('phlow_sessionPublicKey')
+	    	);
+	    }
 
         return ($sessionKeys);
     }
 
-	private function generateSignature($time, $method, $uri, $body, $isReader, $isUserSigned=true) {
+	private function generateSignature($time, $method, $uri, $body, $isUserSigned=true) {
 		$clientKeys = array(
             'privateKey' => get_option('phlow_clientPrivateKey'),
             'publicKey' => get_option('phlow_clientPublicKey')
         );
 
 		if ($isUserSigned){
-            $sessionKeys = $this->getUserCredentials($isReader);
+            $sessionKeys = $this->getUserCredentials();
         }
 
 		$strings = array($method, $uri, $time);
@@ -73,7 +69,7 @@ class phlowAPI {
 		return $clientKeys['publicKey'] . $sessionPublicKey . $time . $checksum;
 	}
 
-	private function signedRequest($method, $endpoint, $body=null, $isReader=false, $isUserSigned=true, $waitForResponse=true, $isAjaxPage=false) {
+	private function signedRequest($method, $endpoint, $body=null, $isUserSigned=true, $waitForResponse=true, $isAjaxPage=false) {
 		$uri = '/v1' . $endpoint;
 		$url = $this->apiUrl . $uri;
 		$time = $this->time();
@@ -93,7 +89,7 @@ class phlowAPI {
             }
         }
 
-        $httpHeaders[] = 'X-PHLOW:' . $this->generateSignature($time, $method, $uri, $body, $isReader, $isUserSigned);
+        $httpHeaders[] = 'X-PHLOW:' . $this->generateSignature($time, $method, $uri, $body, $isUserSigned);
 
         $xPhlowGateway = $this->getPageURL($isAjaxPage);
 
@@ -143,59 +139,65 @@ class phlowAPI {
 	}
 
 	public function login($data = null) {
-		return $this->signedRequest('POST', '/auth', $data, false, false);
+		return $this->signedRequest('POST', '/auth', $data, false);
 	}
 
     public function register($data = null) {
-        return $this->signedRequest('POST', '/users', $data, false, false);
+        return $this->signedRequest('POST', '/users', $data, false);
     }
 
     public function resetPassword($data = null) {
-    	return $this->signedRequest('POST', '/users/password', $data, false, false);
+    	return $this->signedRequest('POST', '/users/password', $data, false);
     }
 
     public function registerSocial($data = null) {
-        return $this->signedRequest('POST', '/users/social', $data, false, false);
+        return $this->signedRequest('POST', '/users/social', $data, false);
     }
 
-	public function me($isReader = false) {
-		return $this->signedRequest('GET', '/users/me', null, $isReader);
+	public function me() {
+		return $this->signedRequest('GET', '/users/me', null);
 	}
 
 	public function userMagazines($userId) {
-		return $this->signedRequest('GET', '/users/' . $userId . '/magazines');
+		$endpoint = '/users/' . $userId . '/magazines';
+		return $this->signedRequest('GET', $endpoint);
 	}
 
 	public function searchMagazines($string) {
-		return $this->signedRequest('GET', '/search/magazines?q=' . $string);
+		$endpoint = '/search/magazines?q=' . $string;
+		return $this->signedRequest('GET', $endpoint);
 	}
 
 	public function searchMoments($string) {
-		return $this->signedRequest('GET', '/events/search?name=' . $string);
+		$endpoint = '/events/search?name=' . $string;
+		return $this->signedRequest('GET', $endpoint);
 	}
 
 	public function streams($queryString, $owned=false) {
 		if ($owned) {
-			$user = $this->me();
-			$queryString .= '&user=' . $user->userId;
+			$sess = $this->session->get();
+			$queryString .= '&user=' . $sess['userId'];
 		}
 
-		return $this->signedRequest('GET', '/streams?' . $queryString, null, false, true, true);
+		$endpoint = '/streams?' . $queryString;
+		return $this->signedRequest('GET', $endpoint, null, true, true);
 	}
 
 	public function magazines($magazineId, $queryString) {
-		return $this->signedRequest('GET', '/magazines/' . $magazineId . '?' . $queryString, null, true, true, true);
+		$endpoint = '/magazines/' . $magazineId . '?' . $queryString;
+		return $this->signedRequest('GET', $endpoint, null, true, true);
 	}
 
 	public function moments($momentId, $queryString) {
-		return $this->signedRequest('GET', '/events/' . $momentId . '?' . $queryString, null, true, true, true);
+		$endpoint = '/events/' . $momentId . '?' . $queryString;
+		return $this->signedRequest('GET', $endpoint, null, true, true);
 	}
 
 	public function generateGuestUser() {
-        return $this->signedRequest('POST', '/users/guest', null, false, false);
+        return $this->signedRequest('POST', '/users/guest', null, false);
     }
 
-	public function seen($photoId, $isReader, $stream = null, $magazine = null, $moment = null) {
+	public function seen($photoId, $stream = null, $magazine = null, $moment = null) {
         /** add caller page */
         $queryParams = array();
 
@@ -212,6 +214,11 @@ class phlowAPI {
         $endpoint = '/photos/' . $photoId . '/activity/seen/?';
         $endpoint .= implode('&', $queryParams);
 
-        return $this->signedRequest('POST', $endpoint, null, $isReader, true, true, true);
+        return $this->signedRequest('POST', $endpoint, null, true, true, true);
+    }
+
+    public function forgetSeen($context) {
+    	$endpoint = '/streams/' . $context . '/forget-seen';
+    	return $this->signedRequest('POST', $endpoint, null, true, true, true);
     }
 }
