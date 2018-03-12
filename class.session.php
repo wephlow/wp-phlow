@@ -29,20 +29,11 @@ class phlowSession {
 			'ip' => $_SERVER['REMOTE_ADDR'],
 			'browser' => $_SERVER['HTTP_USER_AGENT'],
 			// 'referer' => $_SERVER['HTTP_REFERER'],
-			'expiration' => time() + (7 * 24 * 60 * 60), // 7 days
+			'expiration' => time() + (1 * 24 * 60 * 60), // 1 day
 			'privateKey' => $data->privateKey,
 			'publicKey' => $data->publicKey,
 			'userId' => $user->userId
 		);
-	}
-
-	/**
-	 * Check if https is enabled
-	 * @return [boolean]
-	 */
-	private function isSecure() {
-		$https = $_SERVER['HTTPS'];
-		return (!empty($htts) && $https !== 'off') || $_SERVER['SERVER_PORT'] == 443;
 	}
 
 	/**
@@ -55,14 +46,16 @@ class phlowSession {
 		}
 
 		$name = self::$cookieName;
-		$expire = 0;
+		unset($_COOKIE[$name]);
+
+		$expire = time() + (1 * 24 * 60 * 60); // 1 day
 		$path = '/';
-		$domain = $_SERVER['SERVER_NAME'];
-		$secure = $this->isSecure();
+		$domain = ''; // restrict the cookie to a single host
+		$secure = is_ssl();
 		$httponly = true;
 
-		setcookie($name, $value, $expire, $path, $domain, $secure, $httponly);
 		$_COOKIE[$name] = $value;
+		setcookie($name, $value, $expire, $path, $domain, $secure, $httponly);
 	}
 
 	/**

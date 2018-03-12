@@ -37,7 +37,7 @@ class phlowAPI {
 	    	);
 	    }
 
-        return ($sessionKeys);
+        return $sessionKeys;
     }
 
 	private function generateSignature($time, $method, $uri, $body, $isUserSigned=true) {
