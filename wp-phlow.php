@@ -2,12 +2,12 @@
 /**
  * Plugin Name: phlow
  * Description: phlow allows you to embed a carousel or a widget of photographs relevant to a specific theme or context. Be it #wedding#gowns, #portraits#blackandwhite or #yoga, phlow provides you with images that are fresh and relevant. To get started, log through a phlow account (it is 100% free) and either embed the stream in your WYSIWYG editor or add a widget to your blog.
- * Version: 1.4.3
+ * Version: 1.4.4
  * Author: phlow
  * Author URI: http://phlow.com
  */
 
-define('PHLOW__PLUGIN_VER', '1.4.3');
+define('PHLOW__PLUGIN_VER', '1.4.4');
 define('PHLOW__PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('PHLOW__DEPENDENT_PLUGIN', 'wp-phlow-private/wp-phlow-private.php');
 
@@ -216,30 +216,32 @@ class phlow {
 		}
 		// streams
 		else {
-		    $queryString = 'context=' . $context . '&' . $queryString;
-            $owned = (isset($owned) && $owned == 1) ? true : false;
+			$queryString = 'context=' . $context . '&' . $queryString;
+			$owned = (isset($owned) && $owned == 1) ? true : false;
 
-		    $photos = $this->api->streams($queryString, $owned)->photos;
+			$stream = $this->api->streams($queryString, $owned);
+			$context = implode(':', $stream->context); // get correct order of contexts
+			$photos = $stream->photos;
 
-		    // forget seen photos
-		    if (isset($photos) && sizeof($photos) < $limit) {
-		    	$this->api->forgetSeen($context);
-		    	$photos = $this->api->streams($queryString, $owned)->photos;
-		    }
+			// forget seen photos
+			if (isset($photos) && sizeof($photos) < $limit) {
+				$this->api->forgetSeen($context);
+				$photos = $this->api->streams($queryString, $owned)->photos;
+			}
 
-		    if (isset($photos) && sizeof($photos) > 0) {
-                foreach ($photos as $photo) {
-                    $images[] = array(
-                    	'id' => $photo->photoId,
-                        'url' => $this->app_url . '/stream/' . $context . '/photo/' . $photo->photoId . '?autoscroll=1',
-                        'src' => $photo->url
-                    );
+			if (isset($photos) && sizeof($photos) > 0) {
+				foreach ($photos as $photo) {
+					$images[] = array(
+						'id' => $photo->photoId,
+						'url' => $this->app_url . '/stream/' . $context . '/photo/' . $photo->photoId . '?autoscroll=1',
+						'src' => $photo->url
+					);
 
-                    if ($counter++ >= ($limit - 1)) {
-                        break;
-                    }
-                }
-            }
+					if ($counter++ >= ($limit - 1)) {
+						break;
+					}
+				}
+			}
 		}
 
 		return $images;
