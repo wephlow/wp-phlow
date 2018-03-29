@@ -21,21 +21,45 @@ class phlowAPI {
 		return self::$instance;
 	}
 
-    private function getUserCredentials() {
-	    $sess = $this->session->get();
+    private function isFrontRequest() {
+        $script_filename = isset($_SERVER['SCRIPT_FILENAME']) ? $_SERVER['SCRIPT_FILENAME'] : '';
 
-	    if ($sess && !is_admin()) {
-	    	$sessionKeys = array(
-	    		'privateKey' => $sess['privateKey'],
-	    		'publicKey' => $sess['publicKey']
-	    	);
-	    }
-	    else {
-	    	$sessionKeys = array(
-	    		'privateKey' => get_option('phlow_sessionPrivateKey'),
-	    		'publicKey' => get_option('phlow_sessionPublicKey')
-	    	);
-	    }
+        if ((defined('DOING_AJAX') && DOING_AJAX)) {
+            $ref = '';
+
+            if (!empty($_REQUEST['_wp_http_referer'])) {
+                $ref = wp_unslash($_REQUEST['_wp_http_referer']);
+            }
+            elseif (!empty($_SERVER['HTTP_REFERER'])) {
+                $ref = wp_unslash($_SERVER['HTTP_REFERER']);
+            }
+
+            if (strpos($ref, admin_url()) === false && basename($script_filename) === 'admin-ajax.php') {
+                return true;
+            }
+        }
+        elseif (!is_admin()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private function getUserCredentials() {
+        $sess = $this->session->get();
+
+        if ($this->isFrontRequest() && $sess) {
+            $sessionKeys = array(
+                'privateKey' => $sess['privateKey'],
+                'publicKey' => $sess['publicKey']
+            );
+        }
+        else {
+            $sessionKeys = array(
+                'privateKey' => get_option('phlow_sessionPrivateKey'),
+                'publicKey' => get_option('phlow_sessionPublicKey')
+            );
+        }
 
         return $sessionKeys;
     }
