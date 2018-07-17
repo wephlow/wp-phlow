@@ -24,71 +24,32 @@
 	text-align: center;
 }
 
-.phlow-reg {
+/**
+ * Access form
+ */
+.phlow-access {
 	position: relative;
 }
 
-.phlow-reg * {
+.phlow-access * {
 	-webkit-box-sizing: border-box;
 	-moz-box-sizing: border-box;
 	box-sizing: border-box;
 }
 
-.phlow-reg .phlow-title {
-	margin-bottom: 15px;
-	font-weight: 600;
-	font-size: 21px;
-	line-height: 1;
-}
-
-.phlow-reg-box {
+.phlow-access-box {
+	margin-bottom: 2em;
 	padding: 20px 20px 5px;
 	background-color: #ffffff;
 	border: 1px solid #e4e5e7;
-	border-top: 0;
+	border-radius: 4px;
 }
 
-.phlow-reg-tabs {
-	margin: 0;
-	border-bottom: 1px solid #e4e5e7;
-	font-size: 14px;
-}
-
-.phlow-reg-tabs:after {
-	display: table;
-	content: " ";
-	clear: both;
-}
-
-.phlow-reg-tabs li {
-	display: block;
-	float: left;
-	list-style: none;
-	margin: 0;
-	padding: 10px 15px;
-	line-height: 1.5;
-	border: 1px solid transparent;
-	background-color: transparent;
-	color: #3b5998;
-	cursor: pointer;
-}
-
-.phlow-reg-tabs li.active {
-	margin-bottom: -1px;
-	padding-bottom: 11px;
-	border: 1px solid #e4e5e7;
-	border-bottom-color: transparent;
-	border-radius: 4px 4px 0 0;
-	background-color: #fff;
-	color: inherit;
-	cursor: default;
-}
-
-.phlow-reg .field-block {
+.phlow-access .field-block {
 	margin-bottom: 15px;
 }
 
-.phlow-reg .field-block input {
+.phlow-access .field-block input {
 	display: block;
 	width: 100%;
 	height: 34px;
@@ -104,84 +65,23 @@
 	font-size: 14px;
 }
 
-.phlow-reg .field-block input::-webkit-input-placeholder {
+.phlow-access .field-block input::-webkit-input-placeholder {
 	color: #999;
 }
 
-.phlow-reg .field-block input::-ms-input-placeholder {
+.phlow-access .field-block input::-ms-input-placeholder {
 	color: #999;
 }
 
-.phlow-reg .field-block input::-moz-placeholder {
+.phlow-access .field-block input::-moz-placeholder {
 	color: #999;
 }
 
-.phlow-reg .field-block input:-moz-placeholder {
+.phlow-access .field-block input:-moz-placeholder {
 	color: #999;
 }
 
-.phlow-reg .field-block .checkbox {
-	position: relative;
-	display: block;
-	padding-left: 25px;
-	padding-bottom: 5px;
-	line-height: 1.5;
-	font-size: 14px;
-	color: #9f9c9c;
-}
-
-.phlow-reg .field-block .checkbox input {
-	display: inline-block;
-	position: absolute;
-	left: 0;
-	top: 4px;
-	width: 15px;
-	height: 15px;
-}
-
-.phlow-reg-loader {
-	display: none;
-	position: absolute;
-	z-index: 2;
-	left: 0;
-	top: 0;
-	width: 100%;
-	height: 100%;
-	background-color: rgba(255, 255, 255, .5);
-}
-
-.phlow-reg-loader .spin {
-	position: absolute;
-	left: 50%;
-	top: 50%;
-	width: 32px;
-	height: 32px;
-	margin: -16px 0 0 -16px;
-}
-
-.phlow-reg-errors,
-.phlow-reset-errors {
-	display: none;
-	margin: 0 0 1em;
-	list-style-position: inside;
-	color: #e94033;
-	font-size: 14px;
-	line-height: 1.5;
-}
-
-.phlow-reg-errors li .link {
-	display: inline-block;
-	margin-left: 5px;
-	border-bottom: 1px solid #e94033;
-	cursor: pointer;
-}
-
-.phlow-reg-errors li .link:hover {
-	border-bottom-color: transparent;
-	color: #6a6c6f;
-}
-
-.phlow-reg-buttons button {
+.phlow-access-buttons button {
 	display: block;
 	width: 100%;
 	height: 34px;
@@ -197,46 +97,38 @@
 	font-size: 14px;
 }
 
-.phlow-reg-buttons button:hover {
+.phlow-access-buttons button:hover {
 	opacity: 0.9;
 }
 
-.phlow-reg-buttons .phlow-reg-submit,
-.phlow-reg-buttons .phlow-reset-close {
-	background-color: #e4e5e7;
-	color: #6a6c6f;
+.phlow-access-buttons .phlow-access-submit {
+	background-color: #e94033;
+	color: #ffffff;
 }
 
-.phlow-reg-buttons .phlow-reg-facebook {
-	background-color: #3b5998;
-	color: #fff;
-}
-
-.phlow-reg-buttons .phlow-reg-google,
-.phlow-reg-buttons .phlow-reset-submit {
-	background-color: #d4554e;
-	color: #fff;
-}
-
-.phlow-reg-buttons .phlow-reg-twitter {
-	background-color: #1da1f2;
-	color: #fff;
-}
-
-.phlow-reg-success {
-	box-shadow: 0 0 8px #e6e6e6;
-    padding: 15px;
-    text-align: center;
-}
-
-.phlow-reset-message {
-	margin-bottom: 20px;
+.phlow-access .field-block .checkbox {
+	position: relative;
+	display: block;
+	padding-left: 25px;
+	padding-bottom: 5px;
+	line-height: 1.5;
 	font-size: 14px;
+	color: #9f9c9c;
 }
 
-.phlow-modal {
+.phlow-access .field-block .checkbox input {
+	display: inline-block;
 	position: absolute;
-	z-index: 1;
+	left: 0;
+	top: 4px;
+	width: 15px;
+	height: 15px;
+}
+
+.phlow-access-loader {
+	display: none;
+	position: absolute;
+	z-index: 2;
 	left: 0;
 	top: 0;
 	width: 100%;
@@ -244,11 +136,29 @@
 	background-color: rgba(255, 255, 255, .5);
 }
 
-.phlow-modal-box {
-	width: 300px;
-	margin: 50px auto 0;
-	padding: 20px 20px 5px;
-	text-align: center;
-	background-color: white;
-	box-shadow: 0 0 64px rgba(0, 0, 0, .5);
+.phlow-access-loader .spin {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	width: 32px;
+	height: 32px;
+	margin: -16px 0 0 -16px;
+}
+
+.phlow-access-errors {
+	display: none;
+	margin: 0 0 1em;
+	list-style-position: inside;
+	color: #e94033;
+	font-size: 14px;
+	line-height: 1.5;
+}
+
+.phlow-access-message {
+	display: none;
+	margin: 0 0 1em;
+	list-style-position: inside;
+	color: #6a6c6f;
+	font-size: 14px;
+	line-height: 1.5;
 }

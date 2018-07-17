@@ -162,20 +162,8 @@ class phlowAPI {
 		return $time;
 	}
 
-	public function login($data = null) {
-		return $this->signedRequest('POST', '/auth', $data, false);
-	}
-
-    public function register($data = null) {
-        return $this->signedRequest('POST', '/users', $data, false);
-    }
-
-    public function resetPassword($data = null) {
-    	return $this->signedRequest('POST', '/users/password', $data, false);
-    }
-
-    public function registerSocial($data = null) {
-        return $this->signedRequest('POST', '/users/social', $data, false);
+    public function access($data = null) {
+        return $this->signedRequest('POST', '/access', $data, false);
     }
 
 	public function me() {

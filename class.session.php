@@ -32,6 +32,7 @@ class phlowSession {
 			'expiration' => time() + (1 * 24 * 60 * 60), // 1 day
 			'privateKey' => $data->privateKey,
 			'publicKey' => $data->publicKey,
+			'isGuest' => boolval($user->meta->isGuest),
 			'userId' => $user->userId
 		);
 	}
